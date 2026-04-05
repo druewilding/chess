@@ -73,13 +73,24 @@ export class ChessUI {
     this.buildBoard();
   }
 
+  // Returns the piece that should be visually displayed at (rank, file),
+  // accounting for a pending-confirm move (shows the piece at its destination).
+  getVisualPiece(rank, file) {
+    if (this.pendingMoveConfirm) {
+      const { fromRank, fromFile, toRank, toFile } = this.pendingMoveConfirm;
+      if (rank === fromRank && file === fromFile) return null;
+      if (rank === toRank && file === toFile) return this.engine.getPiece(fromRank, fromFile);
+    }
+    return this.engine.getPiece(rank, file);
+  }
+
   render() {
     for (let displayRank = 0; displayRank < 8; displayRank++) {
       for (let displayFile = 0; displayFile < 8; displayFile++) {
         const rank = this.flipped ? 7 - displayRank : displayRank;
         const file = this.flipped ? 7 - displayFile : displayFile;
         const square = this.squares[displayRank][displayFile];
-        const piece = this.engine.getPiece(rank, file);
+        const piece = this.getVisualPiece(rank, file);
 
         // Remove old piece
         const oldPiece = square.querySelector('.piece');

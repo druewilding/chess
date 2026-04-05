@@ -157,15 +157,40 @@
         document.getElementById('confirm-move-bar').hidden = true;
       }
 
+      const fromIndex = reviewIndex !== null ? reviewIndex : positionSnapshots.length - 1;
+      const step = index - fromIndex;
+
       reviewIndex = index;
       engine.deserialize(positionSnapshots[index]);
       ui.interactive = false;
       const hist = engine.moveHistory;
       ui.setLastMove(hist.length > 0 ? hist[hist.length - 1] : null);
-      ui.clearSelection();
+      ui.clearSelection(); // renders the board
       updateStatus();
       updateMoveList();
       updateReviewNavButtons();
+
+      // Animate single-step transitions
+      if (step === 1) {
+        // Forward: animate the move just applied
+        const snap = positionSnapshots[index];
+        const history = Array.isArray(snap.moveHistory) ? snap.moveHistory : Object.values(snap.moveHistory || {});
+        if (history.length > 0) {
+          const move = history[history.length - 1];
+          const pieceType = move.promotion ? move.promotion : move.piece.type;
+          const symbol = ui.pieceSymbols[move.piece.color][pieceType];
+          ui.animateMove(move.from.rank, move.from.file, move.to.rank, move.to.file, symbol, move.piece.color, () => {});
+        }
+      } else if (step === -1) {
+        // Backward: animate reverse of the undone move
+        const snap = positionSnapshots[fromIndex];
+        const history = Array.isArray(snap.moveHistory) ? snap.moveHistory : Object.values(snap.moveHistory || {});
+        if (history.length > 0) {
+          const move = history[history.length - 1];
+          const symbol = ui.pieceSymbols[move.piece.color][move.piece.type];
+          ui.animateMove(move.to.rank, move.to.file, move.from.rank, move.from.file, symbol, move.piece.color, () => {});
+        }
+      }
     }
 
     function exitReview() {
