@@ -147,6 +147,12 @@
       // Set up Firebase callbacks BEFORE starting the listener
       gm.onGameStateChanged = (state, fullData) => {
         try {
+          if (fullData.drawOffer && fullData.drawOffer !== myColor) {
+            document.getElementById('draw-offer-banner').hidden = false;
+          } else {
+            document.getElementById('draw-offer-banner').hidden = true;
+          }
+
           const stateJson = JSON.stringify(state);
           if (stateJson === lastStateJson) return;
           lastStateJson = stateJson;
@@ -184,12 +190,6 @@
             updateStatus();
             updateMoveList();
             updateCaptured();
-          }
-
-          if (fullData.drawOffer && fullData.drawOffer !== myColor) {
-            document.getElementById('draw-offer-banner').hidden = false;
-          } else {
-            document.getElementById('draw-offer-banner').hidden = true;
           }
 
           if (engine.gameOver) showGameOver();
