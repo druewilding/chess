@@ -165,8 +165,13 @@ export class GameManager {
   }
 
   getShareLink() {
-    const base = window.location.href.split('?')[0].replace('game.html', '').replace(/\/$/, '');
-    return `${base}/game.html?id=${this.gameId}`;
+    // Use hash routing — the hash is never sent to the server so static hosts
+    // (serve, GitHub Pages, Netlify, etc.) cannot strip or redirect it.
+    const base = window.location.href
+      .replace(/#.*$/, '')          // strip existing hash
+      .replace(/game(\.html)?$/, '') // strip game / game.html filename
+      .replace(/\/$/, '');           // strip trailing slash
+    return `${base}/game.html#${this.gameId}`;
   }
 
   disconnect() {

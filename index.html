@@ -31,15 +31,7 @@
     <div id="error-message" class="error-message" hidden></div>
 
     <!-- Waiting screen shown after creating a game -->
-    <div id="waiting-screen" class="card" hidden>
-      <h2>Waiting for opponent...</h2>
-      <p>Share this link with your opponent:</p>
-      <div class="share-link-container">
-        <input type="text" id="share-link" readonly>
-        <button id="btn-copy-link" class="btn btn-small">Copy</button>
-      </div>
-      <p class="game-code">Game code: <strong id="game-code-display"></strong></p>
-    </div>
+    <!-- Removed: waiting is now handled inside game.html -->
   </div>
 
   <script type="module">
@@ -64,37 +56,26 @@
       setTimeout(() => { el.hidden = true; }, 5000);
     }
 
-    // Check if there's a game ID in the URL (someone shared a direct link to index.html)
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('id')) {
-      window.location.href = `game.html?id=${params.get('id')}`;
+    // If the user arrives at index.html with a game hash, forward to game.html
+    if (window.location.hash && window.location.hash.length > 1) {
+      window.location.href = 'game.html' + window.location.hash;
     }
 
-    // New standard game
+    // New standard game — go straight to game.html, no waiting screen here
     document.getElementById('btn-new-standard').addEventListener('click', async () => {
       try {
         await ensureInit();
         const gameId = await gm.createGame('standard');
 
-        // Write the initial board state right away so both players see it immediately
+        // Write the initial board state right away
         engine.reset();
         await gm.sendGameState(engine.serialize());
 
-        // Show waiting screen
-        document.querySelector('.lobby').hidden = true;
-        const waitingScreen = document.getElementById('waiting-screen');
-        waitingScreen.hidden = false;
+        // Record that this browser is white for this game
+        localStorage.setItem('chess-color-' + gameId, 'white');
 
-        const shareLink = gm.getShareLink();
-        document.getElementById('share-link').value = shareLink;
-        document.getElementById('game-code-display').textContent = gameId;
-
-        // Listen for opponent joining
-        gm.onPlayerJoined = (data) => {
-          if (data.players?.black) {
-            window.location.href = `game.html?id=${gameId}&color=white`;
-          }
-        };
+        // Navigate using hash so no server redirect can strip the game ID
+        window.location.href = 'game.html#' + gameId;
       } catch (err) {
         showError('Failed to create game: ' + err.message);
       }
@@ -110,7 +91,8 @@
       try {
         await ensureInit();
         await gm.joinGame(gameId);
-        window.location.href = `game.html?id=${gameId}&color=black`;
+        localStorage.setItem('chess-color-' + gameId, 'black');
+        window.location.href = 'game.html#' + gameId;
       } catch (err) {
         showError(err.message);
       }
@@ -119,15 +101,6 @@
     // Allow Enter key in input
     document.getElementById('game-id-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('btn-join').click();
-    });
-
-    // Copy link
-    document.getElementById('btn-copy-link').addEventListener('click', () => {
-      const linkInput = document.getElementById('share-link');
-      navigator.clipboard.writeText(linkInput.value).then(() => {
-        document.getElementById('btn-copy-link').textContent = 'Copied!';
-        setTimeout(() => { document.getElementById('btn-copy-link').textContent = 'Copy'; }, 2000);
-      });
     });
   </script>
 </body>

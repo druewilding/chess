@@ -5,6 +5,9 @@
   padding: 0;
 }
 
+/* Ensure the HTML `hidden` attribute always wins over display rules in class selectors */
+[hidden] { display: none !important; }
+
 :root {
   --bg: #1a1a2e;
   --bg-card: #16213e;

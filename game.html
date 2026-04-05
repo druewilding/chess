@@ -51,6 +51,19 @@
       <button id="btn-decline-draw" class="btn btn-small btn-secondary">Decline</button>
     </div>
 
+    <!-- Waiting for opponent overlay (shown for white before black joins) -->
+    <div id="waiting-overlay" class="game-over-overlay" hidden>
+      <div class="game-over-content">
+        <h2>Waiting for opponent…</h2>
+        <p>Share this link:</p>
+        <div class="share-link-container" style="margin:12px 0">
+          <input type="text" id="share-link" readonly style="color:#4a9eff">
+          <button id="btn-copy-link" class="btn btn-small btn-secondary">Copy</button>
+        </div>
+        <p class="game-code">Code: <strong id="game-code-display"></strong></p>
+      </div>
+    </div>
+
     <!-- Game over overlay -->
     <div id="game-over-overlay" class="game-over-overlay" hidden>
       <div class="game-over-content">
@@ -66,12 +79,13 @@
     import { ChessUI } from './js/chess-ui.js';
     import { GameManager } from './js/game-manager.js';
 
-    // Parse URL params
-    const params = new URLSearchParams(window.location.search);
-    const gameId = params.get('id');
-    const colorParam = params.get('color');
+    // --- Hash-based routing: the hash is never sent to the server,
+    //     so static hosts (serve, GitHub Pages, etc.) can never strip it.
+    const gameId = window.location.hash.slice(1); // e.g. #gjtzu452 → 'gjtzu452'
+    const myColorStored = gameId ? localStorage.getItem('chess-color-' + gameId) : null;
 
     if (!gameId) {
+      // No game ID at all — go back to lobby
       window.location.href = 'index.html';
     }
 
@@ -79,7 +93,7 @@
     const gm = new GameManager();
 
     let ui;
-    let myColor = colorParam || null;
+    let myColor = myColorStored || null;
     let isMyTurn = false;
     let lastStateJson = '';
 
@@ -87,12 +101,14 @@
       await gm.init();
 
       const statusEl = document.getElementById('game-status');
+      statusEl.textContent = 'Connecting…';
 
-      // Resolve color: use URL param, or join as black if arriving via direct link
+      // If we don't have a stored color, try to join as black
       if (!myColor) {
         try {
           await gm.joinGame(gameId);
           myColor = 'black';
+          localStorage.setItem('chess-color-' + gameId, 'black');
         } catch (err) {
           statusEl.textContent = err.message;
           return;
@@ -108,13 +124,27 @@
       const flipped = myColor === 'black';
       ui = new ChessUI(document.getElementById('chess-board'), engine, {
         flipped,
-        interactive: false, // enabled once state arrives and it's our turn
+        interactive: false,
         onMove: handleLocalMove,
       });
       updateLabels();
 
-      // Set up Firebase callbacks BEFORE starting the listener,
-      // so we never miss an event that fires on the first snapshot.
+      // Show waiting overlay for white while opponent hasn't joined yet
+      if (myColor === 'white') {
+        const shareLink = gm.getShareLink();
+        document.getElementById('share-link').value = shareLink;
+        document.getElementById('game-code-display').textContent = gameId;
+        document.getElementById('waiting-overlay').hidden = false;
+
+        document.getElementById('btn-copy-link').addEventListener('click', () => {
+          navigator.clipboard.writeText(shareLink).then(() => {
+            document.getElementById('btn-copy-link').textContent = 'Copied!';
+            setTimeout(() => { document.getElementById('btn-copy-link').textContent = 'Copy'; }, 2000);
+          });
+        });
+      }
+
+      // Set up Firebase callbacks BEFORE starting the listener
       gm.onGameStateChanged = (state, fullData) => {
         try {
           const stateJson = JSON.stringify(state);
@@ -147,8 +177,12 @@
       };
 
       gm.onPlayerJoined = (data) => {
-        statusEl.textContent = '';
-        updateStatus();
+        if (data.status === 'active') {
+          // Opponent joined — hide the waiting overlay
+          document.getElementById('waiting-overlay').hidden = true;
+          statusEl.textContent = '';
+          updateStatus();
+        }
       };
 
       // NOW start listening — callbacks are guaranteed to be set above
