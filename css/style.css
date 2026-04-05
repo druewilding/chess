@@ -330,8 +330,9 @@ body {
 
 /* Pieces */
 .piece {
-  font-size: min(7vw, 52px);
+  font-size: min(7vw, 65px);
   line-height: 1;
+  align-self: end;
   pointer-events: none;
   z-index: 1;
   filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.3));
