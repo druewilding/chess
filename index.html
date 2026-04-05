@@ -43,9 +43,11 @@
   </div>
 
   <script type="module">
+    import { ChessEngine } from './js/chess-engine.js';
     import { GameManager } from './js/game-manager.js';
 
     const gm = new GameManager();
+    const engine = new ChessEngine();
     let initialized = false;
 
     async function ensureInit() {
@@ -73,6 +75,10 @@
       try {
         await ensureInit();
         const gameId = await gm.createGame('standard');
+
+        // Write the initial board state right away so both players see it immediately
+        engine.reset();
+        await gm.sendGameState(engine.serialize());
 
         // Show waiting screen
         document.querySelector('.lobby').hidden = true;

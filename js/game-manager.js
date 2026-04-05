@@ -22,7 +22,8 @@ export class GameManager {
       = await import('https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js');
 
     this.app = initializeApp(firebaseConfig);
-    this.db = getDatabase(this.app);
+    // Pass databaseURL explicitly — required for non-US regions (Europe, Asia, etc.)
+    this.db = getDatabase(this.app, firebaseConfig.databaseURL);
 
     // Store Firebase functions for later use
     this._fb = { ref, set, get, onValue, update, push, onDisconnect, serverTimestamp };
@@ -91,8 +92,8 @@ export class GameManager {
       status: 'active',
     });
 
-    this.listenForChanges();
-
+    // Note: listenForChanges() is NOT called here.
+    // game.html sets up callbacks first, then calls listenForChanges itself.
     return this.playerColor;
   }
 

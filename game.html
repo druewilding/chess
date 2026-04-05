@@ -88,51 +88,42 @@
 
       const statusEl = document.getElementById('game-status');
 
-      if (myColor === 'white') {
-        // We created this game, just listen
-        gm.gameId = gameId;
-        gm.playerColor = 'white';
-        gm.gameRef = gm._fb.ref(gm.db, `games/${gameId}`);
-        gm.listenForChanges();
-      } else if (myColor === 'black') {
-        // We joined this game
-        gm.gameId = gameId;
-        gm.playerColor = 'black';
-        gm.gameRef = gm._fb.ref(gm.db, `games/${gameId}`);
-        gm.listenForChanges();
-      } else {
-        // Direct link - figure out which color, or join
+      // Resolve color: use URL param, or join as black if arriving via direct link
+      if (!myColor) {
         try {
-          const color = await gm.joinGame(gameId);
-          myColor = color;
+          await gm.joinGame(gameId);
+          myColor = 'black';
         } catch (err) {
-          // Game might be full or already started - spectate or show error
           statusEl.textContent = err.message;
           return;
         }
       }
 
-      // Setup UI
+      // Set up the Firebase game reference
+      gm.gameId = gameId;
+      gm.playerColor = myColor;
+      gm.gameRef = gm._fb.ref(gm.db, `games/${gameId}`);
+
+      // Build the UI
       const flipped = myColor === 'black';
       ui = new ChessUI(document.getElementById('chess-board'), engine, {
         flipped,
-        interactive: false, // will enable when it's our turn
+        interactive: false, // enabled once state arrives and it's our turn
         onMove: handleLocalMove,
       });
-
       updateLabels();
 
-      // Handle game state changes from Firebase
+      // Set up Firebase callbacks BEFORE starting the listener,
+      // so we never miss an event that fires on the first snapshot.
       gm.onGameStateChanged = (state, fullData) => {
         const stateJson = JSON.stringify(state);
         if (stateJson === lastStateJson) return;
         lastStateJson = stateJson;
 
         engine.deserialize(state);
-        isMyTurn = engine.turn === myColor;
-        ui.interactive = isMyTurn && !engine.gameOver;
+        isMyTurn = engine.turn === myColor && !engine.gameOver;
+        ui.interactive = isMyTurn;
 
-        // Set last move highlight
         if (engine.moveHistory.length > 0) {
           ui.setLastMove(engine.moveHistory[engine.moveHistory.length - 1]);
         }
@@ -142,43 +133,22 @@
         updateMoveList();
         updateCaptured();
 
-        // Handle draw offers
         if (fullData.drawOffer && fullData.drawOffer !== myColor) {
           document.getElementById('draw-offer-banner').hidden = false;
         } else {
           document.getElementById('draw-offer-banner').hidden = true;
         }
 
-        // Game over
-        if (engine.gameOver) {
-          showGameOver();
-        }
+        if (engine.gameOver) showGameOver();
       };
 
       gm.onPlayerJoined = (data) => {
-        if (data.status === 'active' && !data.state) {
-          // Game just became active, white sends initial state
-          if (myColor === 'white') {
-            engine.reset();
-            gm.sendGameState(engine.serialize());
-          }
-        }
         statusEl.textContent = '';
         updateStatus();
       };
 
-      // If we're white and game is already active (page refresh), resync
-      const snapshot = await gm._fb.get(gm.gameRef);
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        if (data.status === 'active' && !data.state && myColor === 'white') {
-          engine.reset();
-          await gm.sendGameState(engine.serialize());
-        }
-        if (data.status === 'waiting') {
-          statusEl.textContent = 'Waiting for opponent...';
-        }
-      }
+      // NOW start listening — callbacks are guaranteed to be set above
+      gm.listenForChanges();
     }
 
     function handleLocalMove(moveData) {
