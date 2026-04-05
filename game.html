@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess - Game</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="game-container">
+    <!-- Top info bar -->
+    <div class="game-header">
+      <a href="index.html" class="btn btn-small btn-back">← Back</a>
+      <div id="game-status" class="game-status">Connecting...</div>
+    </div>
+
+    <!-- Opponent info -->
+    <div class="player-bar player-top">
+      <span class="player-label" id="opponent-label">Opponent</span>
+      <div class="captured-pieces" id="captured-top"></div>
+    </div>
+
+    <!-- Chess board -->
+    <div class="board-wrapper">
+      <div id="chess-board"></div>
+    </div>
+
+    <!-- Player info -->
+    <div class="player-bar player-bottom">
+      <span class="player-label" id="player-label">You</span>
+      <div class="captured-pieces" id="captured-bottom"></div>
+    </div>
+
+    <!-- Move history -->
+    <div class="move-history-panel">
+      <h3>Moves</h3>
+      <div id="move-list" class="move-list"></div>
+    </div>
+
+    <!-- Game controls -->
+    <div class="game-controls">
+      <button id="btn-resign" class="btn btn-danger btn-small">Resign</button>
+      <button id="btn-draw" class="btn btn-secondary btn-small">Offer Draw</button>
+      <button id="btn-flip" class="btn btn-secondary btn-small">Flip Board</button>
+    </div>
+
+    <!-- Draw offer banner -->
+    <div id="draw-offer-banner" class="draw-offer-banner" hidden>
+      <span>Your opponent offers a draw.</span>
+      <button id="btn-accept-draw" class="btn btn-small btn-primary">Accept</button>
+      <button id="btn-decline-draw" class="btn btn-small btn-secondary">Decline</button>
+    </div>
+
+    <!-- Game over overlay -->
+    <div id="game-over-overlay" class="game-over-overlay" hidden>
+      <div class="game-over-content">
+        <h2 id="game-over-title">Game Over</h2>
+        <p id="game-over-reason"></p>
+        <a href="index.html" class="btn btn-primary">New Game</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { ChessEngine } from './js/chess-engine.js';
+    import { ChessUI } from './js/chess-ui.js';
+    import { GameManager } from './js/game-manager.js';
+
+    // Parse URL params
+    const params = new URLSearchParams(window.location.search);
+    const gameId = params.get('id');
+    const colorParam = params.get('color');
+
+    if (!gameId) {
+      window.location.href = 'index.html';
+    }
+
+    const engine = new ChessEngine();
+    const gm = new GameManager();
+
+    let ui;
+    let myColor = colorParam || null;
+    let isMyTurn = false;
+    let lastStateJson = '';
+
+    async function initGame() {
+      await gm.init();
+
+      const statusEl = document.getElementById('game-status');
+
+      if (myColor === 'white') {
+        // We created this game, just listen
+        gm.gameId = gameId;
+        gm.playerColor = 'white';
+        gm.gameRef = gm._fb.ref(gm.db, `games/${gameId}`);
+        gm.listenForChanges();
+      } else if (myColor === 'black') {
+        // We joined this game
+        gm.gameId = gameId;
+        gm.playerColor = 'black';
+        gm.gameRef = gm._fb.ref(gm.db, `games/${gameId}`);
+        gm.listenForChanges();
+      } else {
+        // Direct link - figure out which color, or join
+        try {
+          const color = await gm.joinGame(gameId);
+          myColor = color;
+        } catch (err) {
+          // Game might be full or already started - spectate or show error
+          statusEl.textContent = err.message;
+          return;
+        }
+      }
+
+      // Setup UI
+      const flipped = myColor === 'black';
+      ui = new ChessUI(document.getElementById('chess-board'), engine, {
+        flipped,
+        interactive: false, // will enable when it's our turn
+        onMove: handleLocalMove,
+      });
+
+      updateLabels();
+
+      // Handle game state changes from Firebase
+      gm.onGameStateChanged = (state, fullData) => {
+        const stateJson = JSON.stringify(state);
+        if (stateJson === lastStateJson) return;
+        lastStateJson = stateJson;
+
+        engine.deserialize(state);
+        isMyTurn = engine.turn === myColor;
+        ui.interactive = isMyTurn && !engine.gameOver;
+
+        // Set last move highlight
+        if (engine.moveHistory.length > 0) {
+          ui.setLastMove(engine.moveHistory[engine.moveHistory.length - 1]);
+        }
+
+        ui.render();
+        updateStatus();
+        updateMoveList();
+        updateCaptured();
+
+        // Handle draw offers
+        if (fullData.drawOffer && fullData.drawOffer !== myColor) {
+          document.getElementById('draw-offer-banner').hidden = false;
+        } else {
+          document.getElementById('draw-offer-banner').hidden = true;
+        }
+
+        // Game over
+        if (engine.gameOver) {
+          showGameOver();
+        }
+      };
+
+      gm.onPlayerJoined = (data) => {
+        if (data.status === 'active' && !data.state) {
+          // Game just became active, white sends initial state
+          if (myColor === 'white') {
+            engine.reset();
+            gm.sendGameState(engine.serialize());
+          }
+        }
+        statusEl.textContent = '';
+        updateStatus();
+      };
+
+      // If we're white and game is already active (page refresh), resync
+      const snapshot = await gm._fb.get(gm.gameRef);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        if (data.status === 'active' && !data.state && myColor === 'white') {
+          engine.reset();
+          await gm.sendGameState(engine.serialize());
+        }
+        if (data.status === 'waiting') {
+          statusEl.textContent = 'Waiting for opponent...';
+        }
+      }
+    }
+
+    function handleLocalMove(moveData) {
+      // Player made a move locally, send to Firebase
+      gm.sendGameState(engine.serialize());
+      isMyTurn = false;
+      ui.interactive = false;
+      updateStatus();
+      updateMoveList();
+      updateCaptured();
+
+      if (engine.gameOver) {
+        showGameOver();
+      }
+    }
+
+    function updateStatus() {
+      const statusEl = document.getElementById('game-status');
+      if (engine.gameOver) {
+        statusEl.textContent = '';
+        return;
+      }
+      if (isMyTurn) {
+        statusEl.textContent = 'Your turn';
+        statusEl.className = 'game-status your-turn';
+      } else {
+        statusEl.textContent = "Opponent's turn";
+        statusEl.className = 'game-status';
+      }
+    }
+
+    function updateLabels() {
+      const playerLabel = document.getElementById('player-label');
+      const opponentLabel = document.getElementById('opponent-label');
+      playerLabel.textContent = `You (${myColor})`;
+      opponentLabel.textContent = `Opponent (${myColor === 'white' ? 'black' : 'white'})`;
+    }
+
+    function updateMoveList() {
+      const moveList = document.getElementById('move-list');
+      moveList.innerHTML = '';
+
+      const history = engine.moveHistory;
+      for (let i = 0; i < history.length; i += 2) {
+        const moveNum = Math.floor(i / 2) + 1;
+        const row = document.createElement('div');
+        row.className = 'move-row';
+
+        const numSpan = document.createElement('span');
+        numSpan.className = 'move-number';
+        numSpan.textContent = `${moveNum}.`;
+        row.appendChild(numSpan);
+
+        const whiteMove = document.createElement('span');
+        whiteMove.className = 'move-notation';
+        whiteMove.textContent = engine.getMoveNotation(history[i]);
+        row.appendChild(whiteMove);
+
+        if (history[i + 1]) {
+          const blackMove = document.createElement('span');
+          blackMove.className = 'move-notation';
+          blackMove.textContent = engine.getMoveNotation(history[i + 1]);
+          row.appendChild(blackMove);
+        }
+
+        moveList.appendChild(row);
+      }
+
+      // Auto-scroll to bottom
+      moveList.scrollTop = moveList.scrollHeight;
+    }
+
+    function updateCaptured() {
+      // Top = opponent's captures, Bottom = our captures
+      const topEl = document.getElementById('captured-top');
+      const bottomEl = document.getElementById('captured-bottom');
+
+      if (myColor === 'white') {
+        ui.updateCapturedPieces(bottomEl, topEl);
+      } else {
+        ui.updateCapturedPieces(topEl, bottomEl);
+      }
+    }
+
+    function showGameOver() {
+      const overlay = document.getElementById('game-over-overlay');
+      const title = document.getElementById('game-over-title');
+      const reason = document.getElementById('game-over-reason');
+
+      overlay.hidden = false;
+
+      if (engine.result === 'draw') {
+        title.textContent = 'Draw';
+        reason.textContent = engine.resultReason ? `by ${engine.resultReason}` : '';
+      } else if (engine.result === myColor) {
+        title.textContent = 'You Win!';
+        reason.textContent = engine.resultReason ? `by ${engine.resultReason}` : '';
+      } else {
+        title.textContent = 'You Lose';
+        reason.textContent = engine.resultReason ? `by ${engine.resultReason}` : '';
+      }
+    }
+
+    // Control buttons
+    document.getElementById('btn-resign').addEventListener('click', () => {
+      if (engine.gameOver) return;
+      if (confirm('Are you sure you want to resign?')) {
+        gm.sendResignation(myColor);
+      }
+    });
+
+    document.getElementById('btn-draw').addEventListener('click', () => {
+      if (engine.gameOver) return;
+      gm.offerDraw(myColor);
+      document.getElementById('game-status').textContent = 'Draw offered...';
+    });
+
+    document.getElementById('btn-accept-draw').addEventListener('click', () => {
+      gm.acceptDraw();
+    });
+
+    document.getElementById('btn-decline-draw').addEventListener('click', () => {
+      gm.declineDraw();
+      document.getElementById('draw-offer-banner').hidden = true;
+    });
+
+    document.getElementById('btn-flip').addEventListener('click', () => {
+      ui.setFlipped(!ui.flipped);
+    });
+
+    // Start
+    initGame().catch(err => {
+      console.error('Failed to initialize game:', err);
+      document.getElementById('game-status').textContent = 'Failed to connect. Check your Firebase config.';
+    });
+  </script>
+</body>
+</html>
