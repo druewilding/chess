@@ -263,6 +263,8 @@ body {
 .chess-board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
   aspect-ratio: 1;
   border-radius: 4px;
   overflow: hidden;
@@ -278,6 +280,10 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: background 0.1s;
+  /* Force perfectly square cells regardless of content */
+  aspect-ratio: 1;
+  width: 100%;
+  overflow: hidden;
 }
 
 .square.light {

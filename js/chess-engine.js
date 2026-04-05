@@ -648,14 +648,14 @@ export class ChessEngine {
     this.moveHistory = state.moveHistory
       ? Object.values(state.moveHistory)
       : [];
-    this.capturedPieces = state.capturedPieces || { white: [], black: [] };
-    // Firebase strips falsy values, so normalize captured piece arrays too
-    if (this.capturedPieces.white && !Array.isArray(this.capturedPieces.white)) {
-      this.capturedPieces.white = Object.values(this.capturedPieces.white);
-    }
-    if (this.capturedPieces.black && !Array.isArray(this.capturedPieces.black)) {
-      this.capturedPieces.black = Object.values(this.capturedPieces.black);
-    }
+    // Always rebuild capturedPieces as proper arrays.
+    // Firebase strips empty arrays entirely, so .white/.black may be absent or
+    // come back as a numeric-keyed object when non-empty.
+    const cp = state.capturedPieces || {};
+    this.capturedPieces = {
+      white: Array.isArray(cp.white) ? cp.white : (cp.white ? Object.values(cp.white) : []),
+      black: Array.isArray(cp.black) ? cp.black : (cp.black ? Object.values(cp.black) : []),
+    };
     this.gameOver = state.gameOver || false;
     this.result = state.result || null;
     this.resultReason = state.resultReason || null;
