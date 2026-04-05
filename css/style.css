@@ -420,6 +420,29 @@ body {
   background: var(--bg-card-hover);
 }
 
+/* ===== Rules Panel ===== */
+.rules-panel {
+  width: 100%;
+  max-width: 480px;
+  margin-top: 16px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.rules-panel h3 {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.rules-panel p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
 /* ===== Move History ===== */
 .move-history-panel {
   width: 100%;
