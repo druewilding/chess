@@ -421,6 +421,17 @@ body {
   background: var(--bg-card-hover);
 }
 
+.promotion-dialog--black .promotion-choice {
+  background: #f0d9b5;
+  color: #1a1a2e;
+  border-color: #b58863;
+}
+
+.promotion-dialog--black .promotion-choice:hover {
+  background: #e8cfa0;
+  border-color: var(--accent);
+}
+
 /* ===== Rules Panel ===== */
 .rules-panel {
   width: 100%;

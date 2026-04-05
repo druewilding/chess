@@ -351,7 +351,7 @@ export class ChessUI {
     overlay.className = 'promotion-overlay';
 
     const dialog = document.createElement('div');
-    dialog.className = 'promotion-dialog';
+    dialog.className = `promotion-dialog${color === 'black' ? ' promotion-dialog--black' : ''}`;
 
     const pieces = ['queen', 'rook', 'bishop', 'knight'];
     for (const pieceType of pieces) {
