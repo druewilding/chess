@@ -77,12 +77,19 @@ export class ChessUI {
   // accounting for a pending-confirm move (shows the piece at its destination).
   getVisualPiece(rank, file) {
     if (this.pendingMoveConfirm) {
-      const { fromRank, fromFile, toRank, toFile, promotion } = this.pendingMoveConfirm;
+      const { fromRank, fromFile, toRank, toFile, promotion, castling } = this.pendingMoveConfirm;
       if (rank === fromRank && file === fromFile) return null;
       if (rank === toRank && file === toFile) {
         const piece = this.engine.getPiece(fromRank, fromFile);
         if (promotion && piece) return { ...piece, type: promotion };
         return piece;
+      }
+      // Handle castling: also move the rook visually
+      if (castling) {
+        const rookFromFile = castling === 'king' ? 7 : 0;
+        const rookToFile = castling === 'king' ? 5 : 3;
+        if (rank === fromRank && file === rookFromFile) return null;
+        if (rank === fromRank && file === rookToFile) return this.engine.getPiece(fromRank, rookFromFile);
       }
     }
     return this.engine.getPiece(rank, file);
@@ -173,7 +180,8 @@ export class ChessUI {
         }
 
         // Highlight king in check or checkmate
-        if (piece && piece.type === 'king' && piece.color === this.engine.turn && this.engine.isInCheck(this.engine.turn)) {
+        // Suppress during pending move preview — any legal pending move resolves check
+        if (!this.pendingMoveConfirm && piece && piece.type === 'king' && piece.color === this.engine.turn && this.engine.isInCheck(this.engine.turn)) {
           if (this.engine.gameOver && this.engine.resultReason === 'checkmate') {
             square.classList.add('in-checkmate');
           } else {
@@ -221,11 +229,13 @@ export class ChessUI {
 
         // Stage for confirmation instead of executing immediately
         if (this.confirmMove) {
+          const legalMove = this.legalMoves.find(m => m.rank === rank && m.file === file);
           this.pendingMoveConfirm = {
             fromRank: this.selectedSquare.rank,
             fromFile: this.selectedSquare.file,
             toRank: rank,
             toFile: file,
+            castling: legalMove ? legalMove.castling : null,
           };
           if (this.onPendingMoveChange) this.onPendingMoveChange(this.pendingMoveConfirm);
           this.render();
