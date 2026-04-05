@@ -556,6 +556,12 @@ body {
   margin-bottom: 24px;
 }
 
+.game-over-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
 /* ===== Scrollbar ===== */
 .move-list::-webkit-scrollbar {
   width: 6px;

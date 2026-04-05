@@ -89,7 +89,10 @@
       <div class="game-over-content">
         <h2 id="game-over-title">Game Over</h2>
         <p id="game-over-reason"></p>
-        <a href="index.html" class="btn btn-primary">New Game</a>
+        <div class="game-over-actions">
+          <button id="btn-review-game" class="btn btn-secondary">Review Game</button>
+          <a href="index.html" class="btn btn-primary">New Game</a>
+        </div>
       </div>
     </div>
   </div>
@@ -508,6 +511,10 @@
     document.getElementById('btn-decline-draw').addEventListener('click', () => {
       gm.declineDraw();
       document.getElementById('draw-offer-banner').hidden = true;
+    });
+
+    document.getElementById('btn-review-game').addEventListener('click', () => {
+      document.getElementById('game-over-overlay').hidden = true;
     });
 
     document.getElementById('btn-flip').addEventListener('click', () => {
