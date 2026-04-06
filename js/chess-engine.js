@@ -776,7 +776,11 @@ export class ChessEngine {
 
     const ambiguous = [];
     const savedTurn = this.turn;
+    const savedIceskate = this.iceskate;
     this.turn = piece.color;
+    // Disable ice skate for disambiguation so notation is valid for standard
+    // engines — they don't know about the ice skate stopping restriction.
+    this.iceskate = false;
 
     for (let r = 0; r < 8; r++) {
       for (let f = 0; f < 8; f++) {
@@ -791,6 +795,7 @@ export class ChessEngine {
     }
 
     this.turn = savedTurn;
+    this.iceskate = savedIceskate;
 
     if (ambiguous.length === 0) return '';
 
