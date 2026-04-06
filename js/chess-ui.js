@@ -77,8 +77,10 @@ export class ChessUI {
   // accounting for a pending-confirm move (shows the piece at its destination).
   getVisualPiece(rank, file) {
     if (this.pendingMoveConfirm) {
-      const { fromRank, fromFile, toRank, toFile, promotion, castling } = this.pendingMoveConfirm;
+      const { fromRank, fromFile, toRank, toFile, promotion, castling, enPassant } = this.pendingMoveConfirm;
       if (rank === fromRank && file === fromFile) return null;
+      // En passant: hide the captured pawn (same rank as moving pawn, destination file)
+      if (enPassant && rank === fromRank && file === toFile) return null;
       if (rank === toRank && file === toFile) {
         const piece = this.engine.getPiece(fromRank, fromFile);
         if (promotion && piece) return { ...piece, type: promotion };
@@ -236,6 +238,7 @@ export class ChessUI {
             toRank: rank,
             toFile: file,
             castling: legalMove ? legalMove.castling : null,
+            enPassant: legalMove ? legalMove.enPassant || false : false,
           };
           if (this.onPendingMoveChange) this.onPendingMoveChange(this.pendingMoveConfirm);
           this.render();
