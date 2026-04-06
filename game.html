@@ -251,6 +251,7 @@
         confirmMove: true,
         onPendingMoveChange: (pending) => {
           document.getElementById('confirm-move-bar').hidden = !pending;
+          updateMoveList();
         },
       });
       updateLabels();
@@ -448,6 +449,48 @@
         }
 
         moveList.appendChild(row);
+      }
+
+      // Show pending (preview) move notation faded at the end of the list
+      if (ui && ui.pendingMoveConfirm && reviewIndex === null) {
+        const { fromRank, fromFile, toRank, toFile, castling, enPassant, promotion } = ui.pendingMoveConfirm;
+        const piece = engine.getPiece(fromRank, fromFile);
+        if (piece) {
+          const capturedPiece = enPassant
+            ? engine.getPiece(fromRank, toFile)
+            : engine.getPiece(toRank, toFile);
+          const { check, checkmate } = engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null);
+          const pendingMoveData = {
+            piece,
+            from: { rank: fromRank, file: fromFile },
+            to: { rank: toRank, file: toFile },
+            captured: capturedPiece,
+            castling: castling || null,
+            enPassant: enPassant || false,
+            promotion: promotion || null,
+            check,
+            checkmate,
+          };
+          const pendingNotation = engine.getMoveNotation(pendingMoveData);
+          const pendingSpan = document.createElement('span');
+          pendingSpan.className = 'move-notation move-notation--pending';
+          pendingSpan.textContent = pendingNotation;
+
+          if (history.length % 2 === 0) {
+            const moveNum = history.length / 2 + 1;
+            const row = document.createElement('div');
+            row.className = 'move-row';
+            const numSpan = document.createElement('span');
+            numSpan.className = 'move-number';
+            numSpan.textContent = `${moveNum}.`;
+            row.appendChild(numSpan);
+            row.appendChild(pendingSpan);
+            moveList.appendChild(row);
+          } else {
+            const lastRow = moveList.lastChild;
+            if (lastRow) lastRow.appendChild(pendingSpan);
+          }
+        }
       }
 
       // Scroll to current move when reviewing; otherwise scroll to bottom

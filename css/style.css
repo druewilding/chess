@@ -703,6 +703,16 @@ body {
   padding: 0 4px;
 }
 
+.move-notation--pending {
+  opacity: 0.4;
+  font-style: italic;
+  cursor: default;
+}
+
+.move-notation--pending:hover {
+  color: var(--text);
+}
+
 .game-status.review-mode {
   color: var(--accent);
   font-style: italic;
