@@ -1,0 +1,8 @@
+# Generated from environment variables — do not commit
+js/firebase-config.js
+
+# Local environment variables — do not commit
+.env
+
+# start script with real values
+start.sh
