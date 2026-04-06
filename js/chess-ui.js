@@ -446,6 +446,7 @@ export class ChessUI {
     const render = (el, pieces, color) => {
       if (!el) return;
       el.innerHTML = '';
+      el.dataset.pieceColor = color;
       const counts = {};
       for (const type of pieces) counts[type] = (counts[type] || 0) + 1;
       for (const type of typeOrder) {
@@ -454,7 +455,7 @@ export class ChessUI {
         group.className = 'captured-group';
         for (let i = 0; i < counts[type]; i++) {
           const span = document.createElement('span');
-          span.className = 'captured-piece';
+          span.className = `captured-piece piece-${color}`;
           span.textContent = this.pieceSymbols[color][type];
           group.appendChild(span);
         }

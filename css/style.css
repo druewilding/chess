@@ -247,7 +247,7 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 0 4px;
-  font-size: 18px;
+  font-size: 24px;
   line-height: 1;
 }
 
@@ -257,12 +257,25 @@ body {
 }
 
 .captured-group .captured-piece {
-  opacity: 0.85;
-  margin-left: -6px;
+  opacity: 0.9;
+  margin-left: -5px;
 }
 
 .captured-group .captured-piece:first-child {
   margin-left: 0;
+}
+
+/* Single pill background behind all captured pieces */
+.captured-pieces[data-piece-color="black"]:not(:empty) {
+  background: rgba(240, 235, 225, 0.88);
+  padding: 3px 8px;
+  border-radius: 7px;
+}
+
+.captured-pieces[data-piece-color="white"]:not(:empty) {
+  background: rgba(0, 0, 0, 0.80);
+  padding: 3px 8px;
+  border-radius: 7px;
 }
 
 /* ===== Chess Board ===== */
