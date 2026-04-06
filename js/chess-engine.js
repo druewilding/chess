@@ -607,6 +607,7 @@ export class ChessEngine {
       check: false,
       checkmate: false,
       stalemate: false,
+      disambiguation: this.computeDisambiguation(fromRank, fromFile, toRank, toFile, piece),
     };
 
     // Capture
@@ -768,6 +769,41 @@ export class ChessEngine {
     this.iceskate = state.iceskate || false;
   }
 
+  // Find disambiguation string for a piece moving from (fromRank,fromFile) to (toRank,toFile).
+  // Must be called before the move is applied to the board.
+  computeDisambiguation(fromRank, fromFile, toRank, toFile, piece) {
+    if (piece.type === 'pawn' || piece.type === 'king') return '';
+
+    const ambiguous = [];
+    const savedTurn = this.turn;
+    this.turn = piece.color;
+
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        if (r === fromRank && f === fromFile) continue;
+        const p = this.board[r][f];
+        if (!p || p.type !== piece.type || p.color !== piece.color) continue;
+        const moves = this.getLegalMoves(r, f);
+        if (moves.some(m => m.rank === toRank && m.file === toFile)) {
+          ambiguous.push({ rank: r, file: f });
+        }
+      }
+    }
+
+    this.turn = savedTurn;
+
+    if (ambiguous.length === 0) return '';
+
+    const files = 'abcdefgh';
+    const ranks = '87654321';
+    const fileUnique = ambiguous.every(p => p.file !== fromFile);
+    const rankUnique = ambiguous.every(p => p.rank !== fromRank);
+
+    if (fileUnique) return files[fromFile];
+    if (rankUnique) return ranks[fromRank];
+    return files[fromFile] + ranks[fromRank];
+  }
+
   // Get algebraic notation for a move
   getMoveNotation(moveData) {
     if (moveData.castling === 'king') return 'O-O';
@@ -780,6 +816,7 @@ export class ChessEngine {
     if (moveData.piece.type !== 'pawn') {
       const symbols = { king: 'K', queen: 'Q', rook: 'R', bishop: 'B', knight: 'N' };
       notation += symbols[moveData.piece.type];
+      if (moveData.disambiguation) notation += moveData.disambiguation;
     }
 
     if (moveData.captured) {
