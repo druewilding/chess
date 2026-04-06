@@ -464,11 +464,19 @@ body {
   margin-bottom: 8px;
 }
 
+.rules-panel {
+  text-align: left;
+}
+
 .rules-panel p {
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.5;
   margin: 0;
+}
+
+.rules-panel p + p {
+  margin-top: 10px;
 }
 
 /* ===== Move History ===== */
