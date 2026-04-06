@@ -245,13 +245,24 @@ body {
 .captured-pieces {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  align-items: center;
+  gap: 0 4px;
   font-size: 18px;
   line-height: 1;
 }
 
-.captured-piece {
-  opacity: 0.8;
+.captured-group {
+  display: flex;
+  align-items: center;
+}
+
+.captured-group .captured-piece {
+  opacity: 0.85;
+  margin-left: -6px;
+}
+
+.captured-group .captured-piece:first-child {
+  margin-left: 0;
 }
 
 /* ===== Chess Board ===== */

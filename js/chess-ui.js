@@ -441,23 +441,28 @@ export class ChessUI {
   }
 
   updateCapturedPieces(capturedDisplayWhite, capturedDisplayBlack) {
-    if (capturedDisplayWhite) {
-      capturedDisplayWhite.innerHTML = '';
-      for (const type of this.engine.capturedPieces.white) {
-        const span = document.createElement('span');
-        span.className = 'captured-piece';
-        span.textContent = this.pieceSymbols.black[type];
-        capturedDisplayWhite.appendChild(span);
+    const typeOrder = ['pawn', 'knight', 'bishop', 'rook', 'queen'];
+
+    const render = (el, pieces, color) => {
+      if (!el) return;
+      el.innerHTML = '';
+      const counts = {};
+      for (const type of pieces) counts[type] = (counts[type] || 0) + 1;
+      for (const type of typeOrder) {
+        if (!counts[type]) continue;
+        const group = document.createElement('span');
+        group.className = 'captured-group';
+        for (let i = 0; i < counts[type]; i++) {
+          const span = document.createElement('span');
+          span.className = 'captured-piece';
+          span.textContent = this.pieceSymbols[color][type];
+          group.appendChild(span);
+        }
+        el.appendChild(group);
       }
-    }
-    if (capturedDisplayBlack) {
-      capturedDisplayBlack.innerHTML = '';
-      for (const type of this.engine.capturedPieces.black) {
-        const span = document.createElement('span');
-        span.className = 'captured-piece';
-        span.textContent = this.pieceSymbols.white[type];
-        capturedDisplayBlack.appendChild(span);
-      }
-    }
+    };
+
+    render(capturedDisplayWhite, this.engine.capturedPieces.white, 'black');
+    render(capturedDisplayBlack, this.engine.capturedPieces.black, 'white');
   }
 }
