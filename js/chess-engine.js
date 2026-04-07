@@ -632,6 +632,22 @@ export class ChessEngine {
     // Promotion
     if (matchingMove.promotion) {
       this.board[toRank][toFile] = { type: matchingMove.promotion, color: piece.color };
+
+      // Material accounting: the promoting pawn leaves the board, so the opponent
+      // effectively "gains" a pawn. The promoted piece either returns from the
+      // opponent's captures (if they captured one earlier) or the promoting player
+      // is credited with capturing one (it appeared out of nowhere).
+      const opponent = piece.color === 'white' ? 'black' : 'white';
+      this.capturedPieces[opponent].push('pawn');
+      const promoType = matchingMove.promotion;
+      const opponentIdx = this.capturedPieces[opponent].indexOf(promoType);
+      if (opponentIdx !== -1) {
+        // Opponent had captured one of these — the promoted piece "came back"
+        this.capturedPieces[opponent].splice(opponentIdx, 1);
+      } else {
+        // No such piece was previously captured — credit the promoting player
+        this.capturedPieces[piece.color].push(promoType);
+      }
     }
 
     // Castling - move the rook

@@ -539,10 +539,37 @@ export class ChessUI {
     const whitePreviewType = pendingCapture?.capturedBy === 'white' ? pendingCapture.type : null;
     const blackPreviewType = pendingCapture?.capturedBy === 'black' ? pendingCapture.type : null;
 
+    // For a pending promotion, compute adjusted capture lists so the displayed
+    // piece icons match what they'll look like after confirmation.
+    let whiteCaptures = this.engine.capturedPieces.white;
+    let blackCaptures = this.engine.capturedPieces.black;
+    if (this.pendingMoveConfirm?.promotion) {
+      const { fromRank, fromFile, promotion } = this.pendingMoveConfirm;
+      const movingPiece = this.engine.getPiece(fromRank, fromFile);
+      if (movingPiece) {
+        const promoterColor = movingPiece.color;
+        const opponentColor = promoterColor === 'white' ? 'black' : 'white';
+        // Work on copies so we don't mutate engine state
+        whiteCaptures = [...this.engine.capturedPieces.white];
+        blackCaptures = [...this.engine.capturedPieces.black];
+        const opponentCaptures = opponentColor === 'white' ? whiteCaptures : blackCaptures;
+        const promoterCaptures = promoterColor === 'white' ? whiteCaptures : blackCaptures;
+        // Opponent gains the promoting pawn
+        opponentCaptures.push('pawn');
+        // Promoted piece type: remove from opponent's prior captures or credit promoter
+        const idx = opponentCaptures.indexOf(promotion);
+        if (idx !== -1) {
+          opponentCaptures.splice(idx, 1);
+        } else {
+          promoterCaptures.push(promotion);
+        }
+      }
+    }
+
     // capturedDisplayWhite shows pieces captured BY white (i.e. black pieces)
-    render(capturedDisplayWhite, this.engine.capturedPieces.white, whitePreviewType, 'black',
+    render(capturedDisplayWhite, whiteCaptures, whitePreviewType, 'black',
            previewWhiteAdv, previewWhiteAdv !== currentWhiteAdv);
-    render(capturedDisplayBlack, this.engine.capturedPieces.black, blackPreviewType, 'white',
+    render(capturedDisplayBlack, blackCaptures, blackPreviewType, 'white',
            previewBlackAdv, previewBlackAdv !== currentBlackAdv);
   }
 }
