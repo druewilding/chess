@@ -13,7 +13,7 @@ self.addEventListener('push', (event) => {
     body: data.body ?? "It's your turn!",
     tag: 'your-turn',
     renotify: true,
-    icon: data.icon ?? null,
+    icon: data.icon ?? '/ice-skate-chess/assets/icon-notification.svg',
     vibrate: [200, 100, 200],
     data: { url: data.url || '/' },
   };

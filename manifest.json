@@ -6,5 +6,12 @@
   "display": "standalone",
   "background_color": "#1a1a2e",
   "theme_color": "#4a9eff",
-  "icons": []
+  "icons": [
+    {
+      "src": "assets/icon-notification.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
