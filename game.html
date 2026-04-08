@@ -133,11 +133,20 @@
       if (!('Notification' in window) || Notification.permission !== 'granted') return;
       // Don't interrupt if the player is actively looking at the page
       if (document.visibilityState === 'visible') return;
-      new Notification('Ice Skate Chess', {
-        body: "It's your turn!",
-        tag: 'your-turn',   // replaces any previous notification instead of stacking
-        renotify: true,
-      });
+      // Use the service worker to show the notification — required on mobile browsers
+      // (new Notification() from the main thread is not supported on Android/iOS).
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification('Ice Skate Chess', {
+            body: "It's your turn!",
+            tag: 'your-turn',   // replaces any previous notification instead of stacking
+            renotify: true,
+          });
+        });
+      } else {
+        // Desktop fallback
+        new Notification('Ice Skate Chess', { body: "It's your turn!", tag: 'your-turn', renotify: true });
+      }
     }
 
     function captureSnapshot() {
