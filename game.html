@@ -123,12 +123,6 @@
     let myColor = myColorStored || null;
     let isMyTurn = false;
     let lastStateJson = '';
-    // Track when the tab last became visible so we can notify even if the
-    // Firebase callback fired after the user returned to the foreground.
-    let lastBecameVisibleAt = Date.now();
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') lastBecameVisibleAt = Date.now();
-    });
 
     // ---- Position history & move review ----
     let positionSnapshots = [];  // snapshots[i] = serialised engine state after i moves
@@ -142,17 +136,7 @@
       });
     }
 
-    // moveTimestamp: the server-side timestamp of the move (fullData.lastMoveAt).
-    // If the move happened before we last became visible, we were backgrounded
-    // when it arrived — notify even though the tab is now in the foreground.
-    function notifyTurn(moveTimestamp) {
-      if (!('Notification' in window)) return;
-      if (Notification.permission !== 'granted') return;
-      const wasBackgroundedForThisMove = moveTimestamp && moveTimestamp < lastBecameVisibleAt;
-      if (document.visibilityState === 'visible' && !wasBackgroundedForThisMove) return;
-      showNotificationViaSW('Ice Skate Chess', "It's your turn!", 'your-turn')
-        .catch(err => console.error('[notify] showNotification failed:', err));
-    }
+    function notifyTurn() {\n      if (!('Notification' in window)) return;\n      if (Notification.permission !== 'granted') return;\n      showNotificationViaSW('Ice Skate Chess', \"It's your turn!\", 'your-turn')\n        .catch(err => console.error('[notify] showNotification failed:', err));\n    }
 
     function testNotification() {
       if (!('Notification' in window)) {
@@ -396,7 +380,7 @@
             engine.moveHistory[newMoveCount - 1].piece.color !== myColor;
 
           // Notify the player if they're not looking at the page
-          if (isOpponentMove) notifyTurn(fullData.lastMoveAt);
+          if (isOpponentMove) notifyTurn();
 
           // For the opponent's latest move, render first (piece appears at dest),
           // then slide a ghost from source → dest on top.
