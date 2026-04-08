@@ -4,16 +4,19 @@
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
-// --- Push: triggered by a future Firebase Cloud Function ---
+// --- Push: triggered by a Firebase Cloud Function ---
 self.addEventListener('push', (event) => {
-  const data = event.data?.json() ?? {};
+  const payload = event.data?.json() ?? {};
+  // FCM wraps data-only messages as { data: { title, body, url } };
+  // fall back to the flat payload shape just in case.
+  const data = payload.data ?? payload;
   const title = data.title ?? 'Ice Skate Chess';
   const options = {
     body: data.body ?? "It's your turn!",
     tag: 'your-turn',        // replaces any existing notification
     renotify: true,
     icon: data.icon ?? null,
-    data: { url: data.url ?? '/' },
+    data: { url: data.url || '/' },
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
