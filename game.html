@@ -136,7 +136,12 @@
       });
     }
 
-    function notifyTurn() {\n      if (!('Notification' in window)) return;\n      if (Notification.permission !== 'granted') return;\n      showNotificationViaSW('Ice Skate Chess', \"It's your turn!\", 'your-turn')\n        .catch(err => console.error('[notify] showNotification failed:', err));\n    }
+    function notifyTurn() {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+      showNotificationViaSW('Ice Skate Chess', "It's your turn!", 'your-turn')
+        .catch(err => console.error('[notify] showNotification failed:', err));
+    }
 
     function testNotification() {
       if (!('Notification' in window)) {
