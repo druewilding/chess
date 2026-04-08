@@ -52,6 +52,7 @@
       <button id="btn-resign" class="btn btn-danger btn-small">Resign</button>
       <button id="btn-draw" class="btn btn-secondary btn-small">Offer Draw</button>
       <button id="btn-flip" class="btn btn-secondary btn-small">Flip Board</button>
+      <button id="btn-test-notif" class="btn btn-secondary btn-small" title="Send a test notification now">🔔 Test</button>
     </div>
 
     <!-- Confirm move floating button -->
@@ -129,23 +130,46 @@
 
     // --- Push notifications ---
 
+    function showNotificationViaSW(title, body, tag) {
+      return navigator.serviceWorker.ready.then(reg => {
+        return reg.showNotification(title, { body, tag, renotify: true });
+      });
+    }
+
     function notifyTurn() {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-      // Don't interrupt if the player is actively looking at the page
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
       if (document.visibilityState === 'visible') return;
-      // Use the service worker to show the notification — required on mobile browsers
-      // (new Notification() from the main thread is not supported on Android/iOS).
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification('Ice Skate Chess', {
-            body: "It's your turn!",
-            tag: 'your-turn',   // replaces any previous notification instead of stacking
-            renotify: true,
-          });
+      showNotificationViaSW('Ice Skate Chess', "It's your turn!", 'your-turn')
+        .catch(err => console.error('[notify] showNotification failed:', err));
+    }
+
+    function testNotification() {
+      if (!('Notification' in window)) {
+        alert('Notifications not supported in this browser.');
+        return;
+      }
+      const perm = Notification.permission;
+      if (perm === 'denied') {
+        alert('Notifications are blocked.\nGo to browser site settings and allow notifications for this site.');
+        return;
+      }
+      const run = () => {
+        if (!('serviceWorker' in navigator)) {
+          alert('Service Worker not available.\nMake sure the site is served over HTTPS or localhost.');
+          return;
+        }
+        showNotificationViaSW('Ice Skate Chess', 'Test notification ✓ — it works!', 'test')
+          .then(() => console.log('[notify-test] notification sent'))
+          .catch(err => alert('Notification failed: ' + err.message + '\n\nCheck the browser console for details.'));
+      };
+      if (perm === 'default') {
+        Notification.requestPermission().then(result => {
+          if (result === 'granted') run();
+          else alert('Permission not granted.');
         });
       } else {
-        // Desktop fallback
-        new Notification('Ice Skate Chess', { body: "It's your turn!", tag: 'your-turn', renotify: true });
+        run();
       }
     }
 
@@ -613,6 +637,8 @@
     document.getElementById('btn-flip').addEventListener('click', () => {
       ui.setFlipped(!ui.flipped);
     });
+
+    document.getElementById('btn-test-notif').addEventListener('click', testNotification);
 
     // Confirm move
     document.getElementById('btn-confirm-move').addEventListener('click', () => {
