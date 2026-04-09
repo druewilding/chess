@@ -124,6 +124,7 @@
     let isMyTurn = false;
     let lastStateJson = '';
     let initialStateLoaded = false; // suppress notification on page load
+    let playerJoinedNotified = false;  // fire once when opponent joins
 
     // ---- Position history & move review ----
     let positionSnapshots = [];  // snapshots[i] = serialised engine state after i moves
@@ -409,6 +410,15 @@
           document.getElementById('waiting-overlay').hidden = true;
           statusEl.textContent = '';
           updateStatus();
+
+          // Notify white that the game has started and it's their turn
+          if (myColor === 'white' && !playerJoinedNotified) {
+            playerJoinedNotified = true;
+            if ('Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
+              showNotificationViaSW('Ice Skate Chess', "Game on! It's your turn.", 'your-turn')
+                .catch(err => console.error('[notify] showNotification failed:', err));
+            }
+          }
         }
       };
 
