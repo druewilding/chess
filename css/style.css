@@ -726,9 +726,10 @@ body {
 }
 
 .review-btn {
-  padding: 4px 9px !important;
-  font-size: 13px !important;
-  min-width: 30px;
+  padding: 10px 16px !important;
+  font-size: 18px !important;
+  min-width: 48px;
+  min-height: 48px;
   line-height: 1.4;
 }
 
