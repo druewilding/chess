@@ -331,7 +331,10 @@
       // Collect every legal move for the bot's pieces, scored by desirability:
       //   capture by piece rank: queen=9, rook=5, bishop/knight=3, pawn=1
       //   en passant: 2  |  castling: 4  |  check: 10  |  checkmate: 20
+      //   opening bonuses: center landing +2/+1, development +2, pawn 2-sq +1
+      //   king non-castling penalty: -3
       //   scores stack (e.g. capture queen + check = 19)
+      const backRank = botColor === 'white' ? 7 : 0;
       const scoredMoves = [];
       for (let rank = 0; rank < 8; rank++) {
         for (let file = 0; file < 8; file++) {
@@ -359,6 +362,24 @@
               move.promotion || null, move.castling);
             if (preview.checkmate) score += 20;
             else if (preview.check) score += 10;
+
+            // --- Opening / positional heuristics ---
+
+            // Center control: d4/e4/d5/e5 = +2, extended center (c3–f6 ring) = +1
+            const toR = move.rank, toF = move.file;
+            const inCenter   = (toR === 3 || toR === 4) && (toF === 3 || toF === 4);
+            const inExtended = toR >= 2 && toR <= 5 && toF >= 2 && toF <= 5;
+            if (inCenter) score += 2;
+            else if (inExtended) score += 1;
+
+            // Prefer pawn two-square advance over one square
+            if (piece.type === 'pawn' && Math.abs(move.rank - rank) === 2) score += 1;
+
+            // Reward developing knights and bishops off the back rank
+            if ((piece.type === 'knight' || piece.type === 'bishop') && rank === backRank) score += 2;
+
+            // Discourage pointless king walks (castling already rewarded above)
+            if (piece.type === 'king' && !move.castling) score -= 3;
 
             scoredMoves.push({ fromRank: rank, fromFile: file, toRank: move.rank, toFile: move.file, score });
           }
