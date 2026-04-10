@@ -330,7 +330,15 @@
       gm.onGameStateChanged = (state, fullData) => {
         try {
           if (fullData.drawOffer && fullData.drawOffer !== myColor) {
-            document.getElementById('draw-offer-banner').hidden = false;
+            const banner = document.getElementById('draw-offer-banner');
+            if (banner.hidden) {
+              // Banner was previously hidden — this is a new draw offer
+              if ('Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
+                showNotificationViaSW('Ice Skate Chess', 'Your opponent offers a draw.', 'draw-offer')
+                  .catch(err => console.error('[notify] showNotification failed:', err));
+              }
+            }
+            banner.hidden = false;
           } else {
             document.getElementById('draw-offer-banner').hidden = true;
           }
