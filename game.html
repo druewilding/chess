@@ -158,6 +158,11 @@
     function buildPositionSnapshots() {
       // Rebuilds from scratch using the live engine (must be at live state with full moveHistory)
       const tempEng = new ChessEngine({ iceskate: engine.iceskate });
+      // Use the engine's actual starting board so Chess960 positions are preserved.
+      // engine.startingBoard is always set (standard or 960 layout).
+      if (engine.startingBoard) {
+        tempEng.reset(JSON.parse(JSON.stringify(engine.startingBoard)));
+      }
       const snaps = [JSON.parse(JSON.stringify(tempEng.serialize()))];
       for (const move of engine.moveHistory) {
         tempEng.makeMove(move.from.rank, move.from.file, move.to.rank, move.to.file, move.promotion || null);
@@ -171,11 +176,20 @@
       const liveMoveCount = engine.moveHistory.length;
       const expectedLength = liveMoveCount + 1;
       if (positionSnapshots.length < expectedLength) {
-        if (positionSnapshots.length === expectedLength - 1) {
+        if (positionSnapshots.length === expectedLength - 1 && positionSnapshots.length > 1) {
+          // Fast path: one snapshot behind and snapshot[0] is already valid.
+          // positionSnapshots.length > 1 ensures we're not using the placeholder
+          // standard-position snapshot set in initGame() before Firebase data arrived.
           positionSnapshots.push(captureSnapshot());
         } else {
+          // Full rebuild — also used on page reload to ensure snapshot[0] reflects
+          // the actual starting position (e.g. Chess960 layout, not standard chess).
           positionSnapshots = buildPositionSnapshots();
         }
+      } else if (liveMoveCount === 0 && positionSnapshots.length === 1) {
+        // 0-move game: update the placeholder snapshot[0] that was captured in
+        // initGame() before Firebase data arrived (was standard position).
+        positionSnapshots[0] = captureSnapshot();
       }
     }
 

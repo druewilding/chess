@@ -20,6 +20,7 @@ export class ChessEngine {
 
   reset(position = null) {
     this.board = position || this.getStartingPosition();
+    this.startingBoard = this.board.map(row => row.slice());
     this.turn = 'white';
     this.castlingRights = { white: { king: true, queen: true }, black: { king: true, queen: true } };
     this.enPassantTarget = null; // square behind the pawn that just double-moved
@@ -64,6 +65,7 @@ export class ChessEngine {
     }
 
     this.board = board;
+    this.startingBoard = board.map(row => row.slice());
     this.turn = 'white';
     this.castlingRights = { white: { king: true, queen: true }, black: { king: true, queen: true } };
     this.enPassantTarget = null;
@@ -785,6 +787,7 @@ export class ChessEngine {
       maxDistance: this.maxDistance,
       iceskate: this.iceskate,
       positionHistory: this.positionHistory,
+      startingBoard: this.startingBoard,
     };
   }
 
@@ -827,6 +830,12 @@ export class ChessEngine {
     this.positionHistory = state.positionHistory
       ? (typeof state.positionHistory === 'object' ? { ...state.positionHistory } : {})
       : {};
+    this.startingBoard = state.startingBoard
+      ? Array.from({ length: 8 }, (_, r) => {
+          const row = state.startingBoard[r] || null;
+          return Array.from({ length: 8 }, (_, f) => (row ? row[f] || null : null));
+        })
+      : this.getStartingPosition();
   }
 
   // Find disambiguation string for a piece moving from (fromRank,fromFile) to (toRank,toFile).
