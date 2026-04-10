@@ -4,9 +4,6 @@ js/firebase-config.js
 # Local environment variables — do not commit
 .env
 
-# start script with real values
-start.sh
-
 # Cloud Functions dependencies
 functions/node_modules/
 firebase-debug.log
