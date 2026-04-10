@@ -297,6 +297,24 @@ body {
   font-weight: 600;
 }
 
+.variant-label {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.variant-label.variant-iceskate {
+  background: rgba(74, 158, 255, 0.15);
+  color: var(--accent);
+}
+
+.variant-label.variant-angry {
+  background: rgba(231, 76, 60, 0.15);
+  color: var(--danger);
+}
+
 /* ===== Player Bars ===== */
 .player-bar {
   width: 100%;
@@ -618,6 +636,10 @@ body {
 
 .rules-panel p + p {
   margin-top: 10px;
+}
+
+.rules-panel-angry h3 {
+  color: var(--danger);
 }
 
 /* ===== Move History ===== */

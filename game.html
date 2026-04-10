@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ice Skate Chess</title>
+  <title>Chess Variants</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4a9eff">
@@ -14,6 +14,7 @@
     <!-- Top info bar -->
     <div class="game-header">
       <a href="index.html" class="btn btn-small btn-back">← Back</a>
+      <span id="variant-label" class="variant-label"></span>
       <div id="game-status" class="game-status">Connecting...</div>
     </div>
 
@@ -61,11 +62,16 @@
       <button id="btn-confirm-move" class="btn btn-confirm" title="Confirm move">✓</button>
     </div>
 
-    <!-- Ice Skate rules -->
-    <div class="rules-panel">
+    <!-- Variant rules -->
+    <div class="rules-panel" id="rules-iceskate">
       <h3>Ice Skate Rules</h3>
       <p>Like regular chess, except sliding pieces (bishops, rooks, and queens) <strong>cannot stop early</strong> — they must travel as far as possible in their chosen direction, stopping only when they hit the edge of the board or a friendly piece, or capture an enemy piece. They <em>may</em> stop at an intermediate square to block check, as this is the furthest they can go in this situation.</p>
       <p>This variant was made up by my sibling Luna.</p>
+    </div>
+
+    <div class="rules-panel rules-panel-angry" id="rules-angry" hidden>
+      <h3>Angry Chess Rules</h3>
+      <p>Like regular chess, except you can <strong>capture your own pieces</strong>! Every piece is a valid target — except your own king. Friendly captures are shown with a blue circle. Be careful: sacrificing your own material can open lines, but it can also backfire spectacularly.</p>
     </div>
 
     <!-- Draw offer banner -->
@@ -129,6 +135,7 @@
     // ---- Position history & move review ----
     let positionSnapshots = [];  // snapshots[i] = serialised engine state after i moves
     let reviewIndex = null;      // null = live; number = reviewing that snapshot
+    let gameVariant = null;      // 'standard', 'iceskate-960', 'angry', 'angry-960'
 
     // Bot mode: hash looks like #bot:standard:white or #bot:iceskate-960:black
     const isBotMode = gameId.startsWith('bot:');
@@ -146,11 +153,16 @@
       });
     }
 
+    function getVariantName() {
+      const labelEl = document.getElementById('variant-label');
+      return labelEl.textContent || 'Chess Variants';
+    }
+
     function notifyTurn() {
       if (!('Notification' in window)) return;
       if (Notification.permission !== 'granted') return;
       if (document.visibilityState === 'visible') return;
-      showNotificationViaSW('Ice Skate Chess', "It's your turn!", 'your-turn')
+      showNotificationViaSW(getVariantName(), "It's your turn!", 'your-turn')
         .catch(err => console.error('[notify] showNotification failed:', err));
     }
 
@@ -160,7 +172,7 @@
 
     function buildPositionSnapshots() {
       // Rebuilds from scratch using the live engine (must be at live state with full moveHistory)
-      const tempEng = new ChessEngine({ iceskate: engine.iceskate });
+      const tempEng = new ChessEngine({ iceskate: engine.iceskate, angry: engine.angry });
       // Use the engine's actual starting board so Chess960 positions are preserved.
       // engine.startingBoard is always set (standard or 960 layout).
       if (engine.startingBoard) {
@@ -272,20 +284,49 @@
       document.getElementById('btn-review-end').disabled   = (currentIndex >= liveIndex);
     }
 
+    function updateVariantDisplay() {
+      const isAngry = engine.angry;
+      const is960 = gameVariant === 'iceskate-960' || gameVariant === 'angry-960';
+      let label;
+      if (isAngry) {
+        label = is960 ? 'Angry Chess960' : 'Angry Chess';
+      } else {
+        label = is960 ? 'Ice Skate Chess960' : 'Ice Skate Chess';
+      }
+      const labelEl = document.getElementById('variant-label');
+      labelEl.textContent = label;
+      if (isAngry) {
+        labelEl.classList.add('variant-angry');
+        labelEl.classList.remove('variant-iceskate');
+      } else {
+        labelEl.classList.add('variant-iceskate');
+        labelEl.classList.remove('variant-angry');
+      }
+      document.getElementById('rules-iceskate').hidden = isAngry;
+      document.getElementById('rules-angry').hidden = !isAngry;
+      document.title = label;
+    }
+
     function initBotGame(variant, playerColor) {
       myColor = playerColor;
+      gameVariant = variant;
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       }
 
-      // Ice skate rules always on; set up board
-      engine.iceskate = true;
-      if (variant === 'iceskate-960') {
+      // Set up rules based on variant
+      const isAngry = variant === 'angry' || variant === 'angry-960';
+      const is960 = variant === 'iceskate-960' || variant === 'angry-960';
+      engine.iceskate = !isAngry;
+      engine.angry = isAngry;
+      if (is960) {
         engine.setup960();
       } else {
         engine.reset();
       }
+
+      updateVariantDisplay();
 
       const flipped = myColor === 'black';
       ui = new ChessUI(document.getElementById('chess-board'), engine, {
@@ -352,7 +393,14 @@
 
             // Normal capture (target square occupied by opponent)
             const target = engine.getPiece(move.rank, move.file);
-            if (target) score += PIECE_VALUES[target.type] || 0;
+            if (target) {
+              if (target.color === botColor) {
+                // Friendly capture (angry chess) — penalize
+                score -= PIECE_VALUES[target.type] || 0;
+              } else {
+                score += PIECE_VALUES[target.type] || 0;
+              }
+            }
 
             // En passant — destination square is empty, but a pawn is captured
             if (move.enPassant) score += 2;
@@ -394,9 +442,12 @@
 
       // BOT_RANDOM_RATE of the time: ignore scoring and pick any legal move at random
       // Otherwise: pick the highest-scoring move, breaking ties randomly
+      // For random selection, exclude moves with negative scores (e.g. friendly captures in Angry Chess)
+      const nonNegativeMoves = scoredMoves.filter(m => m.score >= 0);
+      const randomPool = nonNegativeMoves.length > 0 ? nonNegativeMoves : scoredMoves;
       let chosen;
       if (Math.random() < BOT_RANDOM_RATE) {
-        chosen = scoredMoves[Math.floor(Math.random() * scoredMoves.length)];
+        chosen = randomPool[Math.floor(Math.random() * randomPool.length)];
       } else {
         const maxScore = Math.max(...scoredMoves.map(m => m.score));
         const bestMoves = scoredMoves.filter(m => m.score === maxScore);
@@ -523,7 +574,7 @@
             if (banner.hidden) {
               // Banner was previously hidden — this is a new draw offer
               if ('Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
-                showNotificationViaSW('Ice Skate Chess', 'Your opponent offers a draw.', 'draw-offer')
+                showNotificationViaSW(getVariantName(), 'Your opponent offers a draw.', 'draw-offer')
                   .catch(err => console.error('[notify] showNotification failed:', err));
               }
             }
@@ -541,6 +592,12 @@
           // Always load the live state to build snapshots
           engine.deserialize(state);
           syncSnapshots();
+
+          // Update variant display on first load (flags come from deserialized state)
+          if (!initialStateLoaded) {
+            if (fullData.variant) gameVariant = fullData.variant;
+            updateVariantDisplay();
+          }
 
           if (reviewIndex !== null) {
             // In review mode: update snapshots & isMyTurn but restore the review position
@@ -612,7 +669,7 @@
           if (myColor === 'white' && !playerJoinedNotified) {
             playerJoinedNotified = true;
             if ('Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
-              showNotificationViaSW('Ice Skate Chess', "Game on! It's your turn.", 'your-turn')
+              showNotificationViaSW(getVariantName(), "Game on! It's your turn.", 'your-turn')
                 .catch(err => console.error('[notify] showNotification failed:', err));
             }
           }
@@ -835,7 +892,7 @@
       if (Notification.permission !== 'granted') return;
       if (document.visibilityState === 'visible') return;
       const body = reasonText ? `${reasonText}` : 'The game has ended.';
-      showNotificationViaSW('Ice Skate Chess — ' + titleText, body, 'game-over')
+      showNotificationViaSW(getVariantName() + ' — ' + titleText, body, 'game-over')
         .catch(err => console.error('[notify] showNotification failed:', err));
     }
 

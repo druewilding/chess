@@ -557,8 +557,20 @@ export class ChessUI {
     let previewBlackScore = blackOnBoard;
     if (pendingCapture) {
       const val = pieceValues[pendingCapture.type] || 0;
-      if (pendingCapture.capturedBy === 'white') previewBlackScore -= val;
-      else previewWhiteScore -= val;
+      if (pendingCapture.capturedBy === 'white') {
+        // Check if this is a friendly capture (angry chess)
+        const capturedPiece = this.pendingMoveConfirm.enPassant
+          ? this.engine.getPiece(this.pendingMoveConfirm.fromRank, this.pendingMoveConfirm.toFile)
+          : this.engine.getPiece(this.pendingMoveConfirm.toRank, this.pendingMoveConfirm.toFile);
+        if (capturedPiece && capturedPiece.color === 'white') previewWhiteScore -= val;
+        else previewBlackScore -= val;
+      } else {
+        const capturedPiece = this.pendingMoveConfirm.enPassant
+          ? this.engine.getPiece(this.pendingMoveConfirm.fromRank, this.pendingMoveConfirm.toFile)
+          : this.engine.getPiece(this.pendingMoveConfirm.toRank, this.pendingMoveConfirm.toFile);
+        if (capturedPiece && capturedPiece.color === 'black') previewBlackScore -= val;
+        else previewWhiteScore -= val;
+      }
     }
     if (this.pendingMoveConfirm?.promotion) {
       const { fromRank, fromFile, promotion } = this.pendingMoveConfirm;
@@ -619,8 +631,23 @@ export class ChessUI {
     const currentWhiteAdv = Math.max(0, whiteOnBoard - blackOnBoard);
     const currentBlackAdv = Math.max(0, blackOnBoard - whiteOnBoard);
 
-    const whitePreviewType = pendingCapture?.capturedBy === 'white' ? pendingCapture.type : null;
-    const blackPreviewType = pendingCapture?.capturedBy === 'black' ? pendingCapture.type : null;
+    // For friendly captures (angry chess), credit opponent's capture list
+    let whitePreviewType = null;
+    let blackPreviewType = null;
+    if (pendingCapture) {
+      const capturedPiece = this.pendingMoveConfirm.enPassant
+        ? this.engine.getPiece(this.pendingMoveConfirm.fromRank, this.pendingMoveConfirm.toFile)
+        : this.engine.getPiece(this.pendingMoveConfirm.toRank, this.pendingMoveConfirm.toFile);
+      if (capturedPiece && capturedPiece.color === pendingCapture.capturedBy) {
+        // Friendly capture: credit opponent
+        const opponent = pendingCapture.capturedBy === 'white' ? 'black' : 'white';
+        if (opponent === 'white') whitePreviewType = pendingCapture.type;
+        else blackPreviewType = pendingCapture.type;
+      } else {
+        if (pendingCapture.capturedBy === 'white') whitePreviewType = pendingCapture.type;
+        else blackPreviewType = pendingCapture.type;
+      }
+    }
 
     // For a pending promotion, compute adjusted capture lists so the displayed
     // piece icons match what they'll look like after confirmation.

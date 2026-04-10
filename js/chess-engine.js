@@ -15,6 +15,9 @@ export class ChessEngine {
     // direction — they cannot choose to stop early.
     this.iceskate = options.iceskate || false;
 
+    // Angry Chess: pieces can capture their own pieces (except the king).
+    this.angry = options.angry || false;
+
     this.reset();
   }
 
@@ -250,13 +253,15 @@ export class ChessEngine {
       if (captureFile < 0 || captureFile > 7) continue;
 
       const target = this.board[oneAhead][captureFile];
-      if (target && target.color !== color) {
+      const isEnemyCapture = target && target.color !== color;
+      const isFriendlyCapture = this.angry && target && target.color === color && target.type !== 'king';
+      if (isEnemyCapture || isFriendlyCapture) {
         if (oneAhead === promotionRank) {
           for (const promo of ['queen', 'rook', 'bishop', 'knight']) {
-            moves.push({ rank: oneAhead, file: captureFile, promotion: promo });
+            moves.push({ rank: oneAhead, file: captureFile, promotion: promo, friendlyCapture: isFriendlyCapture || undefined });
           }
         } else {
-          moves.push({ rank: oneAhead, file: captureFile });
+          moves.push({ rank: oneAhead, file: captureFile, friendlyCapture: isFriendlyCapture || undefined });
         }
       }
 
@@ -285,6 +290,8 @@ export class ChessEngine {
       const target = this.board[r][f];
       if (!target || target.color !== color) {
         moves.push({ rank: r, file: f });
+      } else if (this.angry && target.color === color && target.type !== 'king') {
+        moves.push({ rank: r, file: f, friendlyCapture: true });
       }
     }
 
@@ -320,6 +327,8 @@ export class ChessEngine {
         } else {
           if (target.color !== color) {
             moves.push({ rank: r, file: f });
+          } else if (this.angry && target.color === color && target.type !== 'king') {
+            moves.push({ rank: r, file: f, friendlyCapture: true });
           }
           break; // blocked
         }
@@ -344,6 +353,8 @@ export class ChessEngine {
       const target = this.board[r][f];
       if (!target || target.color !== color) {
         moves.push({ rank: r, file: f });
+      } else if (this.angry && target.color === color && target.type !== 'king') {
+        moves.push({ rank: r, file: f, friendlyCapture: true });
       }
     }
 
@@ -668,7 +679,13 @@ export class ChessEngine {
     const targetPiece = this.board[toRank][toFile];
     if (targetPiece && !matchingMove.castling) {
       moveData.captured = { ...targetPiece };
-      this.capturedPieces[piece.color].push(targetPiece.type);
+      // Friendly capture (angry chess): credit the opponent so display is correct
+      if (targetPiece.color === piece.color) {
+        const opponent = piece.color === 'white' ? 'black' : 'white';
+        this.capturedPieces[opponent].push(targetPiece.type);
+      } else {
+        this.capturedPieces[piece.color].push(targetPiece.type);
+      }
     }
 
     // En passant capture
@@ -812,6 +829,7 @@ export class ChessEngine {
       resultReason: this.resultReason,
       maxDistance: this.maxDistance,
       iceskate: this.iceskate,
+      angry: this.angry,
       positionHistory: this.positionHistory,
       startingBoard: this.startingBoard,
       initialKingFile: this.initialKingFile ?? null,
@@ -855,6 +873,7 @@ export class ChessEngine {
       this.maxDistance = state.maxDistance;
     }
     this.iceskate = state.iceskate || false;
+    this.angry = state.angry || false;
     this.positionHistory = state.positionHistory
       ? (typeof state.positionHistory === 'object' ? { ...state.positionHistory } : {})
       : {};
