@@ -616,16 +616,19 @@ export class ChessEngine {
 
     const inCheck = this.isInCheck(opponent);
     let checkmate = false;
+    let stalemate = false;
+    this.turn = opponent;
     if (inCheck) {
-      this.turn = opponent;
       checkmate = !this.hasLegalMoves(opponent);
-      this.turn = savedTurn;
+    } else {
+      stalemate = !this.hasLegalMoves(opponent);
     }
+    this.turn = savedTurn;
 
     this.board = savedBoard;
     this.enPassantTarget = savedEnPassant;
 
-    return { check: inCheck, checkmate };
+    return { check: inCheck, checkmate, stalemate };
   }
 
   // Make a move. Returns move data for sync, or null if illegal.
@@ -950,6 +953,7 @@ export class ChessEngine {
 
     if (moveData.checkmate) notation += '#';
     else if (moveData.check) notation += '+';
+    else if (moveData.stalemate) notation += '$';
 
     return notation;
   }

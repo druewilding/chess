@@ -740,7 +740,7 @@
           const capturedPiece = enPassant
             ? engine.getPiece(fromRank, toFile)
             : engine.getPiece(toRank, toFile);
-          const { check, checkmate } = engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null);
+          const { check, checkmate, stalemate } = engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null);
           const pendingMoveData = {
             piece,
             from: { rank: fromRank, file: fromFile },
@@ -751,6 +751,7 @@
             promotion: promotion || null,
             check,
             checkmate,
+            stalemate,
             disambiguation: engine.computeDisambiguation(fromRank, fromFile, toRank, toFile, piece),
           };
           const pendingNotation = engine.getMoveNotation(pendingMoveData);
