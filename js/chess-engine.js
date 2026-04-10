@@ -924,8 +924,13 @@ export class ChessEngine {
 
   // Get algebraic notation for a move
   getMoveNotation(moveData) {
-    if (moveData.castling === 'king') return 'O-O';
-    if (moveData.castling === 'queen') return 'O-O-O';
+    if (moveData.castling === 'king' || moveData.castling === 'queen') {
+      let notation = moveData.castling === 'king' ? 'O-O' : 'O-O-O';
+      if (moveData.checkmate) notation += '#';
+      else if (moveData.check) notation += '+';
+      else if (moveData.stalemate) notation += '$';
+      return notation;
+    }
 
     const files = 'abcdefgh';
     const ranks = '87654321';
