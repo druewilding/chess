@@ -178,9 +178,12 @@
       if (engine.startingBoard) {
         tempEng.reset(JSON.parse(JSON.stringify(engine.startingBoard)));
       }
+      // Copy 960 initial king/rook positions so castling logic works correctly
+      tempEng.initialKingFile = engine.initialKingFile;
+      tempEng.initialRookFiles = engine.initialRookFiles ? { ...engine.initialRookFiles } : null;
       const snaps = [JSON.parse(JSON.stringify(tempEng.serialize()))];
       for (const move of engine.moveHistory) {
-        tempEng.makeMove(move.from.rank, move.from.file, move.to.rank, move.to.file, move.promotion || null);
+        tempEng.makeMove(move.from.rank, move.from.file, move.to.rank, move.to.file, move.promotion || null, move.castling || undefined);
         snaps.push(JSON.parse(JSON.stringify(tempEng.serialize())));
       }
       return snaps;
@@ -433,7 +436,7 @@
             // Discourage pointless king walks (castling already rewarded above)
             if (piece.type === 'king' && !move.castling) score -= 3;
 
-            scoredMoves.push({ fromRank: rank, fromFile: file, toRank: move.rank, toFile: move.file, score });
+            scoredMoves.push({ fromRank: rank, fromFile: file, toRank: move.rank, toFile: move.file, score, castling: move.castling || null });
           }
         }
       }
@@ -463,7 +466,7 @@
         }
       }
 
-      engine.makeMove(chosen.fromRank, chosen.fromFile, chosen.toRank, chosen.toFile, promotion);
+      engine.makeMove(chosen.fromRank, chosen.fromFile, chosen.toRank, chosen.toFile, promotion, chosen.castling || undefined);
       syncSnapshots();
 
       isMyTurn = engine.turn === myColor && !engine.gameOver;
