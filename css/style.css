@@ -27,6 +27,7 @@
   --board-last-move: rgba(255, 255, 100, 0.35);
   --board-check: rgba(255, 0, 0, 0.6);
   --board-checkmate: rgba(180, 0, 255, 0.7);
+  --board-stalemate: rgba(90, 90, 90, 0.75);
 }
 
 body {
@@ -423,6 +424,10 @@ body {
   background: var(--board-checkmate) !important;
 }
 
+.square.in-stalemate {
+  background: var(--board-stalemate) !important;
+}
+
 /* Legal move dot */
 .square.legal-move::after {
   content: '';
@@ -750,6 +755,10 @@ body {
 
 .square.preview-checkmate {
   background: var(--board-checkmate) !important;
+}
+
+.square.preview-stalemate {
+  background: var(--board-stalemate) !important;
 }
 
 /* Floating confirm button */

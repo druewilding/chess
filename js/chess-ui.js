@@ -109,13 +109,14 @@ export class ChessUI {
   }
 
   render() {
-    // Pre-compute whether the pending move results in check/checkmate
+    // Pre-compute whether the pending move results in check/checkmate/stalemate
     let previewCheckKing = null; // { rank, file }
     let previewIsCheckmate = false;
+    let previewIsStalemate = false;
     if (this.pendingMoveConfirm) {
       const { fromRank, fromFile, toRank, toFile, promotion, castling } = this.pendingMoveConfirm;
       const result = this.engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null, castling);
-      if (result.check || result.checkmate) {
+      if (result.check || result.checkmate || result.stalemate) {
         const movingPiece = this.engine.getPiece(fromRank, fromFile);
         if (movingPiece) {
           const opponent = movingPiece.color === 'white' ? 'black' : 'white';
@@ -129,6 +130,7 @@ export class ChessUI {
             }
           }
           previewIsCheckmate = result.checkmate;
+          previewIsStalemate = result.stalemate;
         }
       }
     }
@@ -145,7 +147,7 @@ export class ChessUI {
         if (oldPiece) oldPiece.remove();
 
         // Remove state classes
-        square.classList.remove('selected', 'legal-move', 'legal-capture', 'legal-friendly', 'last-move', 'in-check', 'in-checkmate', 'pending-from', 'pending-to', 'preview-check', 'preview-checkmate');
+        square.classList.remove('selected', 'legal-move', 'legal-capture', 'legal-friendly', 'last-move', 'in-check', 'in-checkmate', 'in-stalemate', 'pending-from', 'pending-to', 'preview-check', 'preview-checkmate', 'preview-stalemate');
 
         if (piece) {
           const pieceEl = document.createElement('span');
@@ -196,19 +198,23 @@ export class ChessUI {
           }
         }
 
-        // Highlight king in check or checkmate
+        // Highlight king in check, checkmate, or stalemate
         // Suppress during pending move preview — any legal pending move resolves check
-        if (!this.pendingMoveConfirm && piece && piece.type === 'king' && piece.color === this.engine.turn && this.engine.isInCheck(this.engine.turn)) {
+        if (!this.pendingMoveConfirm && piece && piece.type === 'king' && piece.color === this.engine.turn) {
           if (this.engine.gameOver && this.engine.resultReason === 'checkmate') {
             square.classList.add('in-checkmate');
-          } else {
+          } else if (this.engine.gameOver && this.engine.resultReason === 'stalemate') {
+            square.classList.add('in-stalemate');
+          } else if (this.engine.isInCheck(this.engine.turn)) {
             square.classList.add('in-check');
           }
         }
 
-        // Highlight opponent king that would be in check/checkmate from pending move
+        // Highlight opponent king that would be in check/checkmate/stalemate from pending move
         if (previewCheckKing && rank === previewCheckKing.rank && file === previewCheckKing.file) {
-          square.classList.add(previewIsCheckmate ? 'preview-checkmate' : 'preview-check');
+          if (previewIsCheckmate) square.classList.add('preview-checkmate');
+          else if (previewIsStalemate) square.classList.add('preview-stalemate');
+          else square.classList.add('preview-check');
         }
       }
     }
