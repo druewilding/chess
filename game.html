@@ -71,7 +71,7 @@
 
     <div class="rules-panel rules-panel-angry" id="rules-angry" hidden>
       <h3>Angry Chess Rules</h3>
-      <p>Like regular chess, except you can <strong>capture your own pieces</strong>! Every piece is a valid target — except your own king. Friendly captures are shown with a blue circle. Be careful: sacrificing your own material can open lines, but it can also backfire spectacularly.</p>
+      <p>Like regular chess, except you can <strong>capture your own pieces</strong>! Every piece is a valid target, except your own king. Friendly captures are shown with a blue circle. Be careful: sacrificing your own material can open lines, but it can also backfire spectacularly.</p>
     </div>
 
     <!-- Draw offer banner -->
@@ -797,6 +797,7 @@
           const capturedPiece = enPassant
             ? engine.getPiece(fromRank, toFile)
             : engine.getPiece(toRank, toFile);
+          const isFriendlyCapture = capturedPiece && capturedPiece.color === piece.color;
           const { check, checkmate, stalemate } = engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null, castling !== undefined ? castling : undefined);
           const pendingMoveData = {
             piece,
@@ -805,6 +806,7 @@
             captured: capturedPiece,
             castling: castling || null,
             enPassant: enPassant || false,
+            friendlyCapture: isFriendlyCapture || false,
             promotion: promotion || null,
             check,
             checkmate,

@@ -667,6 +667,7 @@ export class ChessEngine {
       promotion: matchingMove.promotion || null,
       castling: matchingMove.castling || null,
       enPassant: matchingMove.enPassant || false,
+      friendlyCapture: matchingMove.friendlyCapture || false,
       check: false,
       checkmate: false,
       stalemate: false,
@@ -977,6 +978,7 @@ export class ChessEngine {
       notation += '=' + symbols[moveData.promotion];
     }
 
+    if (moveData.friendlyCapture) notation += '*';
     if (moveData.checkmate) notation += '#';
     else if (moveData.check) notation += '+';
     else if (moveData.stalemate) notation += '$';
