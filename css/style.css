@@ -445,6 +445,17 @@ body {
   pointer-events: none;
 }
 
+/* Legal friendly ring (friendly piece target — blue) */
+.square.legal-friendly::after {
+  content: '';
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border: 3px solid rgba(30, 144, 255, 0.85);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
 /* Pieces */
 .piece {
   font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif;

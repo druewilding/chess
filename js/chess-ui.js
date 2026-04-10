@@ -145,7 +145,7 @@ export class ChessUI {
         if (oldPiece) oldPiece.remove();
 
         // Remove state classes
-        square.classList.remove('selected', 'legal-move', 'legal-capture', 'last-move', 'in-check', 'in-checkmate', 'pending-from', 'pending-to', 'preview-check', 'preview-checkmate');
+        square.classList.remove('selected', 'legal-move', 'legal-capture', 'legal-friendly', 'last-move', 'in-check', 'in-checkmate', 'pending-from', 'pending-to', 'preview-check', 'preview-checkmate');
 
         if (piece) {
           const pieceEl = document.createElement('span');
@@ -174,7 +174,11 @@ export class ChessUI {
             const targetPiece = this.engine.getPiece(rank, file);
             // Also check en passant
             const isEnPassant = this.legalMoves.some(m => m.rank === rank && m.file === file && m.enPassant);
-            if (targetPiece || isEnPassant) {
+            const selectedPiece = this.selectedSquare ? this.engine.getPiece(this.selectedSquare.rank, this.selectedSquare.file) : null;
+            const isFriendlyTarget = targetPiece && selectedPiece && targetPiece.color === selectedPiece.color;
+            if (isFriendlyTarget) {
+              square.classList.add('legal-friendly');
+            } else if (targetPiece || isEnPassant) {
               square.classList.add('legal-capture');
             } else {
               square.classList.add('legal-move');
