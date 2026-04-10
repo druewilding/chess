@@ -588,16 +588,31 @@
 
       overlay.hidden = false;
 
+      let titleText, reasonText;
       if (engine.result === 'draw') {
-        title.textContent = 'Draw';
-        reason.textContent = engine.resultReason ? `by ${engine.resultReason}` : '';
+        titleText = 'Draw';
+        reasonText = engine.resultReason ? `by ${engine.resultReason}` : '';
       } else if (engine.result === myColor) {
-        title.textContent = 'You Win!';
-        reason.textContent = engine.resultReason ? `by ${engine.resultReason}` : '';
+        titleText = 'You Win!';
+        reasonText = engine.resultReason ? `by ${engine.resultReason}` : '';
       } else {
-        title.textContent = 'You Lose';
-        reason.textContent = engine.resultReason ? `by ${engine.resultReason}` : '';
+        titleText = 'You Lose';
+        reasonText = engine.resultReason ? `by ${engine.resultReason}` : '';
       }
+
+      title.textContent = titleText;
+      reason.textContent = reasonText;
+
+      notifyGameOver(titleText, reasonText);
+    }
+
+    function notifyGameOver(titleText, reasonText) {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+      if (document.visibilityState === 'visible') return;
+      const body = reasonText ? `${reasonText}` : 'The game has ended.';
+      showNotificationViaSW('Ice Skate Chess — ' + titleText, body, 'game-over')
+        .catch(err => console.error('[notify] showNotification failed:', err));
     }
 
     // Control buttons
