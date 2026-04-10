@@ -404,6 +404,7 @@ export class ChessEngine {
 
   getSquaresBetween(fileA, fileB) {
     const squares = [];
+    if (fileA === fileB) return squares;
     const step = fileA < fileB ? 1 : -1;
     for (let f = fileA + step; f !== fileB; f += step) {
       squares.push(f);
