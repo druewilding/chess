@@ -43,12 +43,20 @@
       </div>
 
       <div class="card">
+        <h2>Join Game</h2>
+        <div class="join-form">
+          <input type="text" id="game-id-input" placeholder="Enter game code" maxlength="8" autocomplete="off">
+          <button id="btn-join" class="btn btn-primary">Join</button>
+        </div>
+      </div>
+
+      <div class="card">
         <h2>Play against Bot</h2>
         <div id="bot-variant-picker">
-          <button id="btn-bot-standard" class="btn btn-secondary">Ice Skate Chess</button>
-          <button id="btn-bot-960" class="btn btn-secondary">Ice Skate Chess960</button>
-          <button id="btn-bot-angry" class="btn btn-secondary btn-angry">Angry Chess</button>
-          <button id="btn-bot-angry-960" class="btn btn-secondary btn-angry">Angry Chess960</button>
+          <button id="btn-bot-standard" class="btn btn-primary">Ice Skate Chess</button>
+          <button id="btn-bot-960" class="btn btn-primary">Ice Skate Chess960</button>
+          <button id="btn-bot-angry" class="btn btn-primary btn-angry">Angry Chess</button>
+          <button id="btn-bot-angry-960" class="btn btn-primary btn-angry">Angry Chess960</button>
         </div>
         <div id="bot-color-picker" hidden>
           <p class="color-picker-label">Play as…</p>
@@ -67,14 +75,6 @@
             </button>
           </div>
           <button id="btn-bot-back" class="btn btn-small btn-back" style="width:100%;margin-top:8px">← Back</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Join Game</h2>
-        <div class="join-form">
-          <input type="text" id="game-id-input" placeholder="Enter game code" maxlength="8" autocomplete="off">
-          <button id="btn-join" class="btn btn-primary">Join</button>
         </div>
       </div>
     </div>
