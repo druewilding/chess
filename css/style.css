@@ -143,6 +143,18 @@ body {
   margin-bottom: 8px;
 }
 
+#variant-picker,
+#bot-variant-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+#variant-picker .btn,
+#bot-variant-picker .btn {
+  margin-bottom: 0;
+}
+
 .join-form {
   display: flex;
   gap: 8px;
