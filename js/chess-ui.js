@@ -78,6 +78,24 @@ export class ChessUI {
   getVisualPiece(rank, file) {
     if (this.pendingMoveConfirm) {
       const { fromRank, fromFile, toRank, toFile, promotion, castling, enPassant } = this.pendingMoveConfirm;
+
+      if (castling) {
+        // Castling is always on the back rank (fromRank === toRank)
+        const rookFromFile = this.engine.initialRookFiles
+          ? (castling === 'king' ? this.engine.initialRookFiles.king : this.engine.initialRookFiles.queen)
+          : (castling === 'king' ? 7 : 0);
+        const kingToFile = toFile;
+        const rookToFile = castling === 'king' ? 5 : 3;
+
+        if (rank !== fromRank) return this.engine.getPiece(rank, file);
+        // Check destinations first, then sources — order matters for 960 overlaps
+        if (file === kingToFile) return this.engine.getPiece(fromRank, fromFile);
+        if (file === rookToFile) return this.engine.getPiece(fromRank, rookFromFile);
+        if (file === fromFile)    return null; // king vacated
+        if (file === rookFromFile) return null; // rook vacated
+        return this.engine.getPiece(rank, file);
+      }
+
       if (rank === fromRank && file === fromFile) return null;
       // En passant: hide the captured pawn (same rank as moving pawn, destination file)
       if (enPassant && rank === fromRank && file === toFile) return null;
@@ -85,15 +103,6 @@ export class ChessUI {
         const piece = this.engine.getPiece(fromRank, fromFile);
         if (promotion && piece) return { ...piece, type: promotion };
         return piece;
-      }
-      // Handle castling: also move the rook visually
-      if (castling) {
-        const rookFromFile = this.engine.initialRookFiles
-          ? (castling === 'king' ? this.engine.initialRookFiles.king : this.engine.initialRookFiles.queen)
-          : (castling === 'king' ? 7 : 0);
-        const rookToFile = castling === 'king' ? 5 : 3;
-        if (rank === fromRank && file === rookFromFile) return null;
-        if (rank === fromRank && file === rookToFile) return this.engine.getPiece(fromRank, rookFromFile);
       }
     }
     return this.engine.getPiece(rank, file);
@@ -409,12 +418,12 @@ export class ChessUI {
 
     const label = document.createElement('div');
     label.className = 'castling-disambiguation-label';
-    label.textContent = 'Move or castle?';
+    label.textContent = 'Move king or castle?';
     dialog.appendChild(label);
 
     const choices = [
-      { text: 'King move', move: regularMove },
-      { text: 'O-O-O', move: castlingMove },
+      { text: 'Move king', move: regularMove },
+      { text: 'Castle', move: castlingMove },
     ];
 
     for (const { text, move } of choices) {
