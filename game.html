@@ -325,23 +325,52 @@
       const botColor = myColor === 'white' ? 'black' : 'white';
       if (engine.turn !== botColor) return;
 
-      // Collect every legal move for the bot's pieces
-      const allMoves = [];
+      // Piece values for capture scoring
+      const PIECE_VALUES = { queen: 9, rook: 5, bishop: 3, knight: 3, pawn: 1 };
+
+      // Collect every legal move for the bot's pieces, scored by desirability:
+      //   capture by piece rank: queen=9, rook=5, bishop/knight=3, pawn=1
+      //   en passant: 2  |  castling: 4  |  check: 10  |  checkmate: 20
+      //   scores stack (e.g. capture queen + check = 19)
+      const scoredMoves = [];
       for (let rank = 0; rank < 8; rank++) {
         for (let file = 0; file < 8; file++) {
           const piece = engine.getPiece(rank, file);
-          if (piece && piece.color === botColor) {
-            const moves = engine.getLegalMoves(rank, file);
-            for (const move of moves) {
-              allMoves.push({ fromRank: rank, fromFile: file, toRank: move.rank, toFile: move.file });
-            }
+          if (!piece || piece.color !== botColor) continue;
+          const moves = engine.getLegalMoves(rank, file);
+          for (const move of moves) {
+            // Skip non-queen promotions — the queen variant already scores for this square
+            if (move.promotion && move.promotion !== 'queen') continue;
+
+            let score = 0;
+
+            // Normal capture (target square occupied by opponent)
+            const target = engine.getPiece(move.rank, move.file);
+            if (target) score += PIECE_VALUES[target.type] || 0;
+
+            // En passant — destination square is empty, but a pawn is captured
+            if (move.enPassant) score += 2;
+
+            // Castling
+            if (move.castling) score += 4;
+
+            // Check / checkmate
+            const preview = engine.previewMoveResult(rank, file, move.rank, move.file,
+              move.promotion || null, move.castling);
+            if (preview.checkmate) score += 20;
+            else if (preview.check) score += 10;
+
+            scoredMoves.push({ fromRank: rank, fromFile: file, toRank: move.rank, toFile: move.file, score });
           }
         }
       }
 
-      if (allMoves.length === 0) return; // already checkmate/stalemate — engine handles it
+      if (scoredMoves.length === 0) return; // already checkmate/stalemate — engine handles it
 
-      const chosen = allMoves[Math.floor(Math.random() * allMoves.length)];
+      // Pick the highest-scoring move; break ties randomly
+      const maxScore = Math.max(...scoredMoves.map(m => m.score));
+      const bestMoves = scoredMoves.filter(m => m.score === maxScore);
+      const chosen = bestMoves[Math.floor(Math.random() * bestMoves.length)];
 
       // Detect pawn promotion; always promote to queen
       const movingPiece = engine.getPiece(chosen.fromRank, chosen.fromFile);
