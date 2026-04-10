@@ -104,8 +104,8 @@ export class ChessUI {
     let previewCheckKing = null; // { rank, file }
     let previewIsCheckmate = false;
     if (this.pendingMoveConfirm) {
-      const { fromRank, fromFile, toRank, toFile, promotion } = this.pendingMoveConfirm;
-      const result = this.engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null);
+      const { fromRank, fromFile, toRank, toFile, promotion, castling } = this.pendingMoveConfirm;
+      const result = this.engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null, castling);
       if (result.check || result.checkmate) {
         const movingPiece = this.engine.getPiece(fromRank, fromFile);
         if (movingPiece) {
@@ -231,6 +231,15 @@ export class ChessUI {
           return;
         }
 
+        // Check for castling ambiguity (Chess 960: king move and castle land on same square)
+        const movesToSquare = this.legalMoves.filter(m => m.rank === rank && m.file === file);
+        const castlingCandidate = movesToSquare.find(m => m.castling);
+        const regularCandidate = movesToSquare.find(m => !m.castling);
+        if (castlingCandidate && regularCandidate) {
+          this.showCastlingDisambiguationDialog(rank, file, castlingCandidate, regularCandidate);
+          return;
+        }
+
         // Stage for confirmation instead of executing immediately
         if (this.confirmMove) {
           const legalMove = this.legalMoves.find(m => m.rank === rank && m.file === file);
@@ -345,7 +354,7 @@ export class ChessUI {
     setTimeout(finish, DURATION + 80); // safety fallback
   }
 
-  executeMove(fromRank, fromFile, toRank, toFile, promotion = null) {
+  executeMove(fromRank, fromFile, toRank, toFile, promotion = null, castling = undefined) {
     const piece = this.engine.getPiece(fromRank, fromFile);
     if (!piece) return;
 
@@ -358,7 +367,7 @@ export class ChessUI {
     this.render(); // board shows piece at source, no highlights
 
     this.animateMove(fromRank, fromFile, toRank, toFile, symbol, piece.color, () => {
-      const moveData = this.engine.makeMove(fromRank, fromFile, toRank, toFile, promotion);
+      const moveData = this.engine.makeMove(fromRank, fromFile, toRank, toFile, promotion, castling);
       if (!moveData) { this.render(); return; }
 
       this.lastMove = moveData;
@@ -372,10 +381,10 @@ export class ChessUI {
 
   confirmPendingMove() {
     if (!this.pendingMoveConfirm) return;
-    const { fromRank, fromFile, toRank, toFile, promotion } = this.pendingMoveConfirm;
+    const { fromRank, fromFile, toRank, toFile, promotion, castling } = this.pendingMoveConfirm;
     this.pendingMoveConfirm = null;
     if (this.onPendingMoveChange) this.onPendingMoveChange(null);
-    this.executeMove(fromRank, fromFile, toRank, toFile, promotion || null);
+    this.executeMove(fromRank, fromFile, toRank, toFile, promotion || null, castling !== undefined ? castling : undefined);
   }
 
   cancelPendingMove() {
@@ -385,6 +394,59 @@ export class ChessUI {
     this.legalMoves = [];
     this.render();
     if (this.onPendingMoveChange) this.onPendingMoveChange(null);
+  }
+
+  showCastlingDisambiguationDialog(toRank, toFile, castlingMove, regularMove) {
+    const fromRank = this.selectedSquare.rank;
+    const fromFile = this.selectedSquare.file;
+    const color = this.engine.turn;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'promotion-overlay';
+
+    const dialog = document.createElement('div');
+    dialog.className = 'promotion-dialog castling-disambiguation-dialog';
+
+    const label = document.createElement('div');
+    label.className = 'castling-disambiguation-label';
+    label.textContent = 'Move or castle?';
+    dialog.appendChild(label);
+
+    const choices = [
+      { text: 'King move', move: regularMove },
+      { text: 'O-O-O', move: castlingMove },
+    ];
+
+    for (const { text, move } of choices) {
+      const btn = document.createElement('button');
+      btn.className = 'promotion-choice castling-choice';
+      btn.textContent = text;
+      btn.addEventListener('click', () => {
+        overlay.remove();
+        if (this.confirmMove) {
+          this.pendingMoveConfirm = {
+            fromRank,
+            fromFile,
+            toRank,
+            toFile,
+            castling: move.castling || null,
+            enPassant: move.enPassant || false,
+          };
+          if (this.onPendingMoveChange) this.onPendingMoveChange(this.pendingMoveConfirm);
+          this.render();
+        } else {
+          this.executeMove(fromRank, fromFile, toRank, toFile, null, move.castling || null);
+        }
+      });
+      dialog.appendChild(btn);
+    }
+
+    overlay.appendChild(dialog);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+
+    this.boardEl.parentElement.appendChild(overlay);
   }
 
   showPromotionDialog(toRank, toFile) {

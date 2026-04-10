@@ -549,6 +549,31 @@ body {
   border-color: var(--accent);
 }
 
+/* ===== Castling Disambiguation Dialog ===== */
+.castling-disambiguation-dialog {
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.castling-disambiguation-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.castling-choice {
+  width: auto;
+  height: auto;
+  padding: 10px 24px;
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 600;
+  width: 140px;
+}
+
 /* ===== Rules Panel ===== */
 .rules-panel {
   width: 100%;

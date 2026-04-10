@@ -571,7 +571,7 @@ export class ChessEngine {
 
   // Simulate a move and return { check, checkmate } for the opponent — without
   // permanently modifying game state. Used for move-preview indicators.
-  previewMoveResult(fromRank, fromFile, toRank, toFile, promotion = null) {
+  previewMoveResult(fromRank, fromFile, toRank, toFile, promotion = null, castling = undefined) {
     const piece = this.board[fromRank][fromFile];
     if (!piece) return { check: false, checkmate: false };
 
@@ -579,7 +579,9 @@ export class ChessEngine {
     const moveObj = legalMoves.find(m => {
       if (m.rank !== toRank || m.file !== toFile) return false;
       if (promotion) return m.promotion === promotion;
-      return !m.promotion;
+      if (m.promotion) return false;
+      if (castling !== undefined) return (m.castling || null) === castling;
+      return true;
     });
     if (!moveObj) return { check: false, checkmate: false };
 
@@ -626,7 +628,7 @@ export class ChessEngine {
   }
 
   // Make a move. Returns move data for sync, or null if illegal.
-  makeMove(fromRank, fromFile, toRank, toFile, promotion = null) {
+  makeMove(fromRank, fromFile, toRank, toFile, promotion = null, castling = undefined) {
     const piece = this.getPiece(fromRank, fromFile);
     if (!piece || piece.color !== this.turn) return null;
 
@@ -635,6 +637,8 @@ export class ChessEngine {
       if (m.rank !== toRank || m.file !== toFile) return false;
       if (m.promotion && promotion) return m.promotion === promotion;
       if (m.promotion && !promotion) return m.promotion === 'queen'; // default
+      // Disambiguate castling when caller specifies a preference
+      if (castling !== undefined) return (m.castling || null) === castling;
       return true;
     });
 
