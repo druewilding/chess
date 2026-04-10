@@ -419,6 +419,7 @@ export class ChessUI {
     const fromRank = this.selectedSquare.rank;
     const fromFile = this.selectedSquare.file;
     const color = this.engine.turn;
+    const isFriendlyCapture = regularMove.friendlyCapture;
 
     const overlay = document.createElement('div');
     overlay.className = 'promotion-overlay';
@@ -428,11 +429,11 @@ export class ChessUI {
 
     const label = document.createElement('div');
     label.className = 'castling-disambiguation-label';
-    label.textContent = 'Move king or castle?';
+    label.textContent = isFriendlyCapture ? 'Capture rook or castle?' : 'Move king or castle?';
     dialog.appendChild(label);
 
     const choices = [
-      { text: 'Move king', move: regularMove },
+      { text: isFriendlyCapture ? 'Capture' : 'Move king', move: regularMove },
       { text: 'Castle', move: castlingMove },
     ];
 
