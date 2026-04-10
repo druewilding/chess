@@ -663,8 +663,10 @@ export class ChessEngine {
     };
 
     // Capture
+    // In Chess 960, castling is encoded as the king moving to the rook's square,
+    // so the destination square holds a friendly rook — not a capture.
     const targetPiece = this.board[toRank][toFile];
-    if (targetPiece) {
+    if (targetPiece && !matchingMove.castling) {
       moveData.captured = { ...targetPiece };
       this.capturedPieces[piece.color].push(targetPiece.type);
     }
