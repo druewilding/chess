@@ -247,8 +247,10 @@
           const suppressAnim = ui.dark && !liveGameOver && move.piece.color !== myColor;
           if (!suppressAnim) {
             const pieceType = move.promotion ? move.promotion : move.piece.type;
-            const symbol = ui.pieceSymbols[move.piece.color][pieceType];
-            ui.animateMove(move.from.rank, move.from.file, move.to.rank, move.to.file, symbol, move.piece.color, afterAnimation);
+            ui.animateMove(
+              move.from.rank, move.from.file, move.to.rank, move.to.file,
+              pieceType, move.piece.color, afterAnimation
+            );
             return;
           }
         }
@@ -261,8 +263,10 @@
           // Dark Chess: skip enemy animations during review if game is still in progress
           const suppressAnim = ui.dark && !liveGameOver && move.piece.color !== myColor;
           if (!suppressAnim) {
-            const symbol = ui.pieceSymbols[move.piece.color][move.piece.type];
-            ui.animateMove(move.to.rank, move.to.file, move.from.rank, move.from.file, symbol, move.piece.color, afterAnimation);
+            ui.animateMove(
+              move.to.rank, move.to.file, move.from.rank, move.from.file,
+              move.piece.type, move.piece.color, afterAnimation
+            );
             return;
           }
         }

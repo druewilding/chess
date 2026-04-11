@@ -22,9 +22,25 @@ export class ChessUI {
     this.playerColor = options.playerColor || 'white';
     this.darkRevealed = false;
 
-    this.pieceSymbols = {
-      white: { king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟' },
-      black: { king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟' },
+
+    // Map for image filenames
+    this.pieceImagePaths = {
+      white: {
+        king:  'assets/pieces/white/king.webp',
+        queen: 'assets/pieces/white/queen.webp',
+        rook:  'assets/pieces/white/rook.webp',
+        bishop:'assets/pieces/white/bishop.webp',
+        knight:'assets/pieces/white/knight.webp',
+        pawn:  'assets/pieces/white/pawn.webp',
+      },
+      black: {
+        king:  'assets/pieces/black/king.webp',
+        queen: 'assets/pieces/black/queen.webp',
+        rook:  'assets/pieces/black/rook.webp',
+        bishop:'assets/pieces/black/bishop.webp',
+        knight:'assets/pieces/black/knight.webp',
+        pawn:  'assets/pieces/black/pawn.webp',
+      }
     };
 
     this.buildBoard();
@@ -178,9 +194,10 @@ export class ChessUI {
           !(illuminatedSquares && illuminatedSquares.has(`${rank},${file}`));
 
         if (piece && !hidePiece) {
-          const pieceEl = document.createElement('span');
+          const pieceEl = document.createElement('img');
           pieceEl.className = `piece piece-${piece.color}`;
-          pieceEl.textContent = this.pieceSymbols[piece.color][piece.type];
+          pieceEl.src = this.pieceImagePaths[piece.color][piece.type];
+          pieceEl.alt = piece.type;
           square.appendChild(pieceEl);
         }
 
@@ -371,35 +388,32 @@ export class ChessUI {
     if (dstPiece) dstPiece.style.visibility = 'hidden';
 
     // Create a flying piece fixed-positioned over the source square
-    const flyer = document.createElement('span');
+
+    const flyer = document.createElement('img');
     flyer.className = `piece piece-${pieceColor}`;
-    flyer.textContent = symbol;
-    const fontSize = Math.round(fromRect.width * 0.78) + 'px';
+    flyer.src = this.pieceImagePaths[pieceColor][symbol];
+    flyer.alt = symbol;
     Object.assign(flyer.style, {
       position: 'fixed',
       left: fromRect.left + 'px',
       top:  fromRect.top  + 'px',
       width:  fromRect.width  + 'px',
       height: fromRect.height + 'px',
-      fontSize,
-      lineHeight: fromRect.height + 'px',
-      textAlign: 'center',
       pointerEvents: 'none',
       zIndex: '1000',
-      transition: 'none',
       margin: '0',
       padding: '0',
+      transition: 'left 160ms ease, top 160ms ease',
     });
     document.body.appendChild(flyer);
 
     // Force reflow so the starting position is painted before we transition
     flyer.getBoundingClientRect();
 
-    const DURATION = 160; // ms
-    flyer.style.transition = `left ${DURATION}ms ease, top ${DURATION}ms ease`;
     flyer.style.left = toRect.left + 'px';
     flyer.style.top  = toRect.top  + 'px';
 
+    const DURATION = 160; // ms
     let finished = false;
     const finish = () => {
       if (finished) return;
@@ -415,10 +429,11 @@ export class ChessUI {
   }
 
   executeMove(fromRank, fromFile, toRank, toFile, promotion = null, castling = undefined) {
+
     const piece = this.engine.getPiece(fromRank, fromFile);
     if (!piece) return;
-
-    const symbol = this.pieceSymbols[piece.color][piece.type];
+    // Use piece.type as the symbol for image lookup
+    const symbol = piece.type;
 
     // Clear selection highlights and lock interaction for the duration of the animation
     this.selectedSquare = null;
@@ -637,16 +652,18 @@ export class ChessUI {
         const group = document.createElement('span');
         group.className = 'captured-group';
         for (let i = 0; i < normalCount; i++) {
-          const span = document.createElement('span');
-          span.className = `captured-piece piece-${color}`;
-          span.textContent = this.pieceSymbols[color][type];
-          group.appendChild(span);
+          const img = document.createElement('img');
+          img.className = `captured-piece piece-${color}`;
+          img.src = this.pieceImagePaths[color][type];
+          img.alt = type;
+          group.appendChild(img);
         }
         if (hasPreview) {
-          const span = document.createElement('span');
-          span.className = `captured-piece piece-${color} captured-piece--preview`;
-          span.textContent = this.pieceSymbols[color][type];
-          group.appendChild(span);
+          const img = document.createElement('img');
+          img.className = `captured-piece piece-${color} captured-piece--preview`;
+          img.src = this.pieceImagePaths[color][type];
+          img.alt = type;
+          group.appendChild(img);
         }
         el.appendChild(group);
       }

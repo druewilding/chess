@@ -446,7 +446,15 @@ body {
 
 .captured-group .captured-piece {
   opacity: 0.9;
-  margin-left: -5px;
+  margin-left: -12px;
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 24px !important;
+  max-height: 24px !important;
+  object-fit: contain;
+  z-index: 1;
 }
 
 .captured-group .captured-piece:first-child {
@@ -582,6 +590,7 @@ body {
 }
 
 /* Pieces */
+
 .piece {
   font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif;
   font-size: min(7vw, 65px);
@@ -590,6 +599,18 @@ body {
   pointer-events: none;
   z-index: 1;
   filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.3));
+  transition: transform 0.16s cubic-bezier(0.4,0.0,0.2,1), left 0.16s, top 0.16s;
+}
+
+.piece img, img.piece {
+  width: min(12vw, 60px);
+  height: min(12vw, 60px);
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.3));
+  transition: transform 0.16s cubic-bezier(0.4,0.0,0.2,1), left 0.16s, top 0.16s;
 }
 
 .piece-white {
