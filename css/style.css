@@ -465,6 +465,11 @@ body {
   background: var(--board-stalemate) !important;
 }
 
+.chess-board.board-stalemated {
+  filter: grayscale(0.65) brightness(0.58);
+  transition: filter 0.4s;
+}
+
 /* Legal move dot */
 .square.legal-move::after {
   content: '';
