@@ -59,7 +59,7 @@ Four automatic draw conditions are checked at the end of `makeMove()`, in this o
 ### Move notation
 `getMoveNotation()` produces standard algebraic notation with custom suffixes:
 - `*` — friendly capture (Angry Chess)
-- `$` — move gives stalemate
+- `$` — move ends the game as a draw: stalemate (`moveData.stalemate`), or one of the three rule-based draws — fifty-move rule, threefold repetition, insufficient material (`moveData.draw`)
 - `+` — check, `#` — checkmate (standard)
 - `=Q` etc — promotion piece
 

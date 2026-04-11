@@ -629,6 +629,10 @@ export class ChessEngine {
     const savedBoard = this.board.map(row => row.slice());
     const savedEnPassant = this.enPassantTarget;
     const savedTurn = this.turn;
+    const savedCastlingRights = {
+      white: { ...this.castlingRights.white },
+      black: { ...this.castlingRights.black },
+    };
 
     // Apply the move
     const movedPiece = moveObj.promotion ? { type: moveObj.promotion, color: piece.color } : piece;
@@ -669,13 +673,32 @@ export class ChessEngine {
     const newHalfMoveClock = (piece.type === 'pawn' || isCapture) ? 0 : this.halfMoveClock + 1;
     const fiftyMove = newHalfMoveClock >= 100;
     const insufficientMat = !checkmate && !stalemate && this.hasInsufficientMaterial();
-    // Peek at repetition count without committing
+    // Mirror castling-rights changes so the hash matches what makeMove would record
+    if (piece.type === 'king') {
+      this.castlingRights[piece.color].king = false;
+      this.castlingRights[piece.color].queen = false;
+    }
+    if (piece.type === 'rook') {
+      const baseRank = piece.color === 'white' ? 7 : 0;
+      if (fromRank === baseRank && fromFile === this.getInitialRookFile('queen')) this.castlingRights[piece.color].queen = false;
+      if (fromRank === baseRank && fromFile === this.getInitialRookFile('king'))  this.castlingRights[piece.color].king  = false;
+    }
+    if (isCapture && savedBoard[toRank][toFile] && savedBoard[toRank][toFile].type === 'rook') {
+      const capturedColor = savedBoard[toRank][toFile].color;
+      const capturedBaseRank = capturedColor === 'white' ? 7 : 0;
+      if (toRank === capturedBaseRank && toFile === this.getInitialRookFile('queen')) this.castlingRights[capturedColor].queen = false;
+      if (toRank === capturedBaseRank && toFile === this.getInitialRookFile('king'))  this.castlingRights[capturedColor].king  = false;
+    }
+    // Hash must use the opponent's turn (as it would be after makeMove switches turns)
+    this.turn = opponent;
     const hash = this.getBoardHash();
+    this.turn = savedTurn;
     const repetition = !fiftyMove && !insufficientMat && (this.positionHistory[hash] || 0) + 1 >= 3;
     const draw = fiftyMove || insufficientMat || repetition;
 
     this.board = savedBoard;
     this.enPassantTarget = savedEnPassant;
+    this.castlingRights = savedCastlingRights;
 
     return { check: inCheck, checkmate, stalemate, draw };
   }
@@ -836,6 +859,7 @@ export class ChessEngine {
 
     // 50-move rule
     if (this.halfMoveClock >= 100) {
+      moveData.draw = true;
       this.gameOver = true;
       this.result = 'draw';
       this.resultReason = 'fifty-move rule';
@@ -843,6 +867,7 @@ export class ChessEngine {
 
     // Threefold repetition
     if (!this.gameOver && this.recordPosition() >= 3) {
+      moveData.draw = true;
       this.gameOver = true;
       this.result = 'draw';
       this.resultReason = 'repetition';
@@ -850,6 +875,7 @@ export class ChessEngine {
 
     // Insufficient material
     if (!this.gameOver && this.hasInsufficientMaterial()) {
+      moveData.draw = true;
       this.gameOver = true;
       this.result = 'draw';
       this.resultReason = 'insufficient material';
@@ -997,7 +1023,7 @@ export class ChessEngine {
       let notation = moveData.castling === 'king' ? 'O-O' : 'O-O-O';
       if (moveData.checkmate) notation += '#';
       else if (moveData.check) notation += '+';
-      else if (moveData.stalemate) notation += '$';
+      else if (moveData.stalemate || moveData.draw) notation += '$';
       return notation;
     }
 
@@ -1028,7 +1054,7 @@ export class ChessEngine {
     if (moveData.friendlyCapture) notation += '*';
     if (moveData.checkmate) notation += '#';
     else if (moveData.check) notation += '+';
-    else if (moveData.stalemate) notation += '$';
+    else if (moveData.stalemate || moveData.draw) notation += '$';
 
     return notation;
   }

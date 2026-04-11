@@ -844,7 +844,7 @@
             ? engine.getPiece(fromRank, toFile)
             : engine.getPiece(toRank, toFile);
           const isFriendlyCapture = capturedPiece && capturedPiece.color === piece.color;
-          const { check, checkmate, stalemate } = engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null, castling !== undefined ? castling : undefined);
+          const { check, checkmate, stalemate, draw } = engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null, castling !== undefined ? castling : undefined);
           const pendingMoveData = {
             piece,
             from: { rank: fromRank, file: fromFile },
@@ -857,6 +857,7 @@
             check,
             checkmate,
             stalemate,
+            draw,
             disambiguation: engine.computeDisambiguation(fromRank, fromFile, toRank, toFile, piece),
           };
           const pendingNotation = engine.getMoveNotation(pendingMoveData);
