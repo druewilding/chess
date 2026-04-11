@@ -669,11 +669,10 @@
             updateMoveList();
             updateCaptured();
             if (!engine.dark) {
-              const symbol = ui.pieceSymbols[lastMove.piece.color][lastMove.piece.type];
               ui.animateMove(
                 lastMove.from.rank, lastMove.from.file,
                 lastMove.to.rank,   lastMove.to.file,
-                symbol, lastMove.piece.color, () => {}
+                lastMove.piece.type, lastMove.piece.color, () => {}
               );
             }
           } else {
