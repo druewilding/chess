@@ -247,8 +247,10 @@
           const suppressAnim = ui.dark && !liveGameOver && move.piece.color !== myColor;
           if (!suppressAnim) {
             const pieceType = move.promotion ? move.promotion : move.piece.type;
-            const symbol = ui.pieceSymbols[move.piece.color][pieceType];
-            ui.animateMove(move.from.rank, move.from.file, move.to.rank, move.to.file, symbol, move.piece.color, afterAnimation);
+            ui.animateMove(
+              move.from.rank, move.from.file, move.to.rank, move.to.file,
+              pieceType, move.piece.color, afterAnimation
+            );
             return;
           }
         }
@@ -261,8 +263,10 @@
           // Dark Chess: skip enemy animations during review if game is still in progress
           const suppressAnim = ui.dark && !liveGameOver && move.piece.color !== myColor;
           if (!suppressAnim) {
-            const symbol = ui.pieceSymbols[move.piece.color][move.piece.type];
-            ui.animateMove(move.to.rank, move.to.file, move.from.rank, move.from.file, symbol, move.piece.color, afterAnimation);
+            ui.animateMove(
+              move.to.rank, move.to.file, move.from.rank, move.from.file,
+              move.piece.type, move.piece.color, afterAnimation
+            );
             return;
           }
         }
@@ -500,11 +504,10 @@
       // In Dark Chess, skip bot move animation so we don't reveal the move
       if (!engine.dark) {
         const pieceType = lastMove.promotion ? lastMove.promotion : lastMove.piece.type;
-        const symbol = ui.pieceSymbols[lastMove.piece.color][pieceType];
         ui.animateMove(
           lastMove.from.rank, lastMove.from.file,
           lastMove.to.rank,   lastMove.to.file,
-          symbol, lastMove.piece.color, () => {}
+          pieceType, lastMove.piece.color, () => {}
         );
       }
 
@@ -666,11 +669,10 @@
             updateMoveList();
             updateCaptured();
             if (!engine.dark) {
-              const symbol = ui.pieceSymbols[lastMove.piece.color][lastMove.piece.type];
               ui.animateMove(
                 lastMove.from.rank, lastMove.from.file,
                 lastMove.to.rank,   lastMove.to.file,
-                symbol, lastMove.piece.color, () => {}
+                lastMove.piece.type, lastMove.piece.color, () => {}
               );
             }
           } else {
