@@ -133,7 +133,7 @@
     // ---- Position history & move review ----
     let positionSnapshots = [];  // snapshots[i] = serialised engine state after i moves
     let reviewIndex = null;      // null = live; number = reviewing that snapshot
-    let gameVariant = null;      // 'iceskate', 'iceskate-960', 'angry', 'angry-960'
+    let gameVariant = null;      // 'iceskate', 'iceskate-960', 'angry', 'angry-960', 'superchess'
 
     // Bot mode: hash looks like #bot:iceskate:white or #bot:iceskate-960:black
     const isBotMode = gameId.startsWith('bot:');
@@ -343,9 +343,11 @@
       const isAngry = variant === 'angry' || variant === 'angry-960';
       const isDark = variant === 'dark' || variant === 'dark-960';
       const is960 = variant.endsWith('-960');
-      engine.iceskate = !isAngry && !isDark;
+      const isSuperchess = variant === 'superchess';
+      engine.iceskate = !isAngry && !isDark && !isSuperchess;
       engine.angry = isAngry;
       engine.dark = isDark;
+      engine.superchess = isSuperchess;
       if (is960) {
         engine.setup960();
       } else {
@@ -398,7 +400,7 @@
       const BOT_RANDOM_RATE = 0.3;
 
       // Piece values for capture scoring
-      const PIECE_VALUES = { queen: 9, rook: 5, bishop: 3, knight: 3, pawn: 1 };
+      const PIECE_VALUES = { queen: 9, rook: 5, bishop: 3, knight: 3, pawn: 1, amazon: 13 };
 
       // Collect every legal move for the bot's pieces, scored by desirability:
       //   capture by piece rank: queen=9, rook=5, bishop/knight=3, pawn=1
@@ -414,8 +416,11 @@
           if (!piece || piece.color !== botColor) continue;
           const moves = engine.getLegalMoves(rank, file);
           for (const move of moves) {
-            // Skip non-queen promotions — the queen variant already scores for this square
-            if (move.promotion && move.promotion !== 'queen') continue;
+            // In Superchess, allow Amazon promotion; otherwise, only queen
+            if (move.promotion && (
+              (gameVariant === 'superchess' && move.promotion !== 'amazon' && move.promotion !== 'queen') ||
+              (gameVariant !== 'superchess' && move.promotion !== 'queen')
+            )) continue;
 
             let score = 0;
 

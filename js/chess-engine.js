@@ -246,6 +246,12 @@ export class ChessEngine {
       case 'bishop': return this.getSlidingMoves(rank, file, piece.color, 'bishop');
       case 'rook': return this.getSlidingMoves(rank, file, piece.color, 'rook');
       case 'queen': return this.getSlidingMoves(rank, file, piece.color, 'queen');
+      case 'amazon':
+        // Amazon = queen + knight moves
+        return [
+          ...this.getSlidingMoves(rank, file, piece.color, 'queen'),
+          ...this.getKnightMoves(rank, file, piece.color)
+        ];
       case 'king': return this.getKingMoves(rank, file, piece.color);
       default: return [];
     }
@@ -257,11 +263,15 @@ export class ChessEngine {
     const startRank = color === 'white' ? 6 : 1;
     const promotionRank = color === 'white' ? 0 : 7;
 
+    // Determine promotion options
+    let promotionOptions = ['queen', 'rook', 'bishop', 'knight'];
+    if (this.superchess) promotionOptions.unshift('amazon');
+
     // Forward one
     const oneAhead = rank + direction;
     if (oneAhead >= 0 && oneAhead <= 7 && !this.board[oneAhead][file]) {
       if (oneAhead === promotionRank) {
-        for (const promo of ['queen', 'rook', 'bishop', 'knight']) {
+        for (const promo of promotionOptions) {
           moves.push({ rank: oneAhead, file, promotion: promo });
         }
       } else {
@@ -285,7 +295,7 @@ export class ChessEngine {
       const isFriendlyCapture = this.angry && target && target.color === color && target.type !== 'king';
       if (isEnemyCapture || isFriendlyCapture) {
         if (oneAhead === promotionRank) {
-          for (const promo of ['queen', 'rook', 'bishop', 'knight']) {
+          for (const promo of promotionOptions) {
             moves.push({ rank: oneAhead, file: captureFile, promotion: promo, friendlyCapture: isFriendlyCapture || undefined });
           }
         } else {
@@ -316,6 +326,7 @@ export class ChessEngine {
       const f = file + df;
       if (r < 0 || r > 7 || f < 0 || f > 7) continue;
       const target = this.board[r][f];
+      if (target && target.type === 'king') continue; // Never capture king
       if (!target || target.color !== color) {
         moves.push({ rank: r, file: f });
       } else if (this.angry && target.color === color && target.type !== 'king') {
@@ -350,6 +361,7 @@ export class ChessEngine {
         if (r < 0 || r > 7 || f < 0 || f > 7) break;
 
         const target = this.board[r][f];
+        if (target && target.type === 'king') break; // Never capture king, never move past king
         if (!target) {
           moves.push({ rank: r, file: f });
         } else {
@@ -960,8 +972,8 @@ export class ChessEngine {
     let notation = '';
 
     if (moveData.piece.type !== 'pawn') {
-      const symbols = { king: 'K', queen: 'Q', rook: 'R', bishop: 'B', knight: 'N' };
-      notation += symbols[moveData.piece.type];
+      const symbols = { king: 'K', queen: 'Q', rook: 'R', bishop: 'B', knight: 'N', amazon: 'A' };
+      notation += symbols[moveData.piece.type] || '?';
       if (moveData.disambiguation) notation += moveData.disambiguation;
     }
 
@@ -975,8 +987,8 @@ export class ChessEngine {
     notation += files[moveData.to.file] + ranks[moveData.to.rank];
 
     if (moveData.promotion) {
-      const symbols = { queen: 'Q', rook: 'R', bishop: 'B', knight: 'N' };
-      notation += '=' + symbols[moveData.promotion];
+      const symbols = { queen: 'Q', rook: 'R', bishop: 'B', knight: 'N', amazon: 'A' };
+      notation += '=' + (symbols[moveData.promotion] || '?');
     }
 
     if (moveData.friendlyCapture) notation += '*';
