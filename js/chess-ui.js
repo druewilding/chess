@@ -197,7 +197,8 @@ export class ChessUI {
           const pieceEl = document.createElement('img');
           pieceEl.className = `piece piece-${piece.color}`;
           pieceEl.src = this.pieceImagePaths[piece.color][piece.type];
-          pieceEl.alt = piece.type;
+          pieceEl.alt = `${piece.color} ${piece.type}`;
+          pieceEl.draggable = false;
           square.appendChild(pieceEl);
         }
 
@@ -373,7 +374,7 @@ export class ChessUI {
   }
 
   // Animate a piece sliding from one square to another, then call onComplete.
-  animateMove(fromRank, fromFile, toRank, toFile, symbol, pieceColor, onComplete) {
+  animateMove(fromRank, fromFile, toRank, toFile, pieceType, pieceColor, onComplete) {
     const fromEl = this.getSquareEl(fromRank, fromFile);
     const toEl   = this.getSquareEl(toRank,   toFile);
 
@@ -391,8 +392,8 @@ export class ChessUI {
 
     const flyer = document.createElement('img');
     flyer.className = `piece piece-${pieceColor}`;
-    flyer.src = this.pieceImagePaths[pieceColor][symbol];
-    flyer.alt = symbol;
+    flyer.src = this.pieceImagePaths[pieceColor][pieceType];
+    flyer.alt = `${pieceColor} ${pieceType}`;
     Object.assign(flyer.style, {
       position: 'fixed',
       left: fromRect.left + 'px',
@@ -432,16 +433,13 @@ export class ChessUI {
 
     const piece = this.engine.getPiece(fromRank, fromFile);
     if (!piece) return;
-    // Use piece.type as the symbol for image lookup
-    const symbol = piece.type;
-
     // Clear selection highlights and lock interaction for the duration of the animation
     this.selectedSquare = null;
     this.legalMoves = [];
     this.interactive = false;
     this.render(); // board shows piece at source, no highlights
 
-    this.animateMove(fromRank, fromFile, toRank, toFile, symbol, piece.color, () => {
+    this.animateMove(fromRank, fromFile, toRank, toFile, piece.type, piece.color, () => {
       const moveData = this.engine.makeMove(fromRank, fromFile, toRank, toFile, promotion, castling);
       if (!moveData) { this.render(); return; }
 
@@ -543,7 +541,13 @@ export class ChessUI {
     for (const pieceType of pieces) {
       const btn = document.createElement('button');
       btn.className = 'promotion-choice';
-      btn.textContent = this.pieceSymbols[color][pieceType];
+      const img = document.createElement('img');
+      img.src = this.pieceImagePaths[color][pieceType];
+      img.alt = `${color} ${pieceType}`;
+      img.draggable = false;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      btn.appendChild(img);
       btn.addEventListener('click', () => {
         overlay.remove();
         this.pendingPromotion = null;
