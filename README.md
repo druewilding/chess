@@ -21,7 +21,11 @@ Standard chess, but the board is shrouded in darkness. Tap a piece to shine a to
 
 ![Dark Chess](assets/images/dark-chess.png)
 
-All three variants have a **Chess960** (Fischer Random) mode.
+### Chess960
+
+All variants have a **Chess960** (Fischer Random) mode, where the back rank pieces are shuffled into one of 960 possible starting positions.
+
+![Chess960](assets/images/chess-960.png)
 
 ## Features
 
