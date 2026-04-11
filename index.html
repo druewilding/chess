@@ -13,7 +13,9 @@
   <div class="container">
     <h1>Chess Variants</h1>
 
-    <div class="lobby">
+    <div class="lobby-layout">
+
+    <div class="lobby-left">
       <div class="card">
         <h2>New Game</h2>
         <div id="variant-picker">
@@ -83,28 +85,54 @@
           <button id="btn-bot-back" class="btn btn-small btn-back" style="width:100%;margin-top:8px">← Back</button>
         </div>
       </div>
-    </div>
 
-    <div id="error-message" class="error-message" hidden></div>
+      <div id="error-message" class="error-message" hidden></div>
+    </div><!-- /.lobby-left -->
 
-    <div class="rules-panel">
-      <h3>How to Play Ice Skate Chess</h3>
-      <p>Like regular chess, except sliding pieces (bishops, rooks, and queens) <strong>cannot stop early</strong> — they must travel as far as possible in their chosen direction, stopping only when they hit the edge of the board or a friendly piece, or capture an enemy piece. They <em>may</em> stop at an intermediate square to block check, as this is the furthest they can go in this situation.</p>
-      <p>This variant was made up by my sibling Luna.</p>
-      <img src="assets/images/ice-skate-chess.png" alt="Ice Skate Chess screenshot" class="variant-screenshot">
-    </div>
+    <div class="lobby-right">
+      <section class="rules-panel">
+        <details open>
+          <summary><h3>How to Play Ice Skate Chess</h3></summary>
+          <div>
+            <p>Like regular chess, except sliding pieces (bishops, rooks, and queens) <strong>cannot stop early</strong> — they must travel as far as possible in their chosen direction, stopping only when they hit the edge of the board or a friendly piece, or capture an enemy piece. They <em>may</em> stop at an intermediate square to block check, as this is the furthest they can go in this situation.</p>
+            <p>This variant was made up by my sibling Luna.</p>
+            <img src="assets/images/ice-skate-chess.png" alt="Ice Skate Chess screenshot" class="variant-screenshot">
+          </div>
+        </details>
+      </section>
 
-    <div class="rules-panel rules-panel-angry">
-      <h3>How to Play Angry Chess</h3>
-      <p>Like regular chess, except you can <strong>capture your own pieces</strong>! Every piece is a valid target, except your own king. Be careful: sacrificing your own material can open lines, but it can also backfire spectacularly.</p>
-      <img src="assets/images/angry-chess.png" alt="Angry Chess screenshot" class="variant-screenshot">
-    </div>
+      <section class="rules-panel rules-panel-angry">
+        <details>
+          <summary><h3>How to Play Angry Chess</h3></summary>
+          <div>
+            <p>Like regular chess, except you can <strong>capture your own pieces</strong>! Every piece is a valid target, except your own king. Be careful: sacrificing your own material can open lines, but it can also backfire spectacularly.</p>
+            <img src="assets/images/angry-chess.png" alt="Angry Chess screenshot" class="variant-screenshot">
+          </div>
+        </details>
+      </section>
 
-    <div class="rules-panel rules-panel-dark">
-      <h3>How to Play Dark Chess</h3>
-      <p>Standard chess, but the board is <strong>shrouded in darkness</strong>. You can always see your own pieces, but enemy pieces are completely hidden. Tap one of your pieces to <strong>shine a torch</strong> — its legal moves light up, revealing any enemies lurking in the path.</p>
-      <img src="assets/images/dark-chess.png" alt="Dark Chess screenshot" class="variant-screenshot">
-    </div>
+      <section class="rules-panel rules-panel-dark">
+        <details>
+          <summary><h3>How to Play Dark Chess</h3></summary>
+          <div>
+            <p>Standard chess, but the board is <strong>shrouded in darkness</strong>. You can always see your own pieces, but enemy pieces are completely hidden. Tap one of your pieces to <strong>shine a torch</strong> — its legal moves light up, revealing any enemies lurking in the path.</p>
+            <img src="assets/images/dark-chess.png" alt="Dark Chess screenshot" class="variant-screenshot">
+          </div>
+        </details>
+      </section>
+
+      <section class="rules-panel rules-panel-960">
+        <details>
+          <summary><h3>How to Play Chess960</h3></summary>
+          <div>
+            <p>Also known as <strong>Fischer Random Chess</strong>. The back rank pieces are shuffled into one of 960 possible starting positions, so opening theory goes out the window. Castling still works — the king and rook end up on their usual squares, regardless of where they started.</p>
+            <img src="assets/images/chess-960.png" alt="Chess960 screenshot" class="variant-screenshot">
+          </div>
+        </details>
+      </section>
+    </div><!-- /.lobby-right -->
+
+    </div><!-- /.lobby-layout -->
 
     <!-- Waiting screen shown after creating a game -->
     <!-- Removed: waiting is now handled inside game.html -->

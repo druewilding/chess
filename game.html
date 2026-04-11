@@ -10,70 +10,63 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
   <div class="game-container">
-    <!-- Top info bar -->
     <div class="game-header">
       <a href="index.html" class="btn btn-small btn-back">← Back</a>
       <span id="variant-label" class="variant-label"></span>
       <div id="game-status" class="game-status">Connecting...</div>
     </div>
 
-    <!-- Opponent info -->
-    <div class="player-bar player-top">
-      <span class="player-label" id="opponent-label">Opponent</span>
-      <div class="captured-pieces" id="captured-top"></div>
-    </div>
-
-    <!-- Chess board -->
-    <div class="board-wrapper">
-      <div id="chess-board"></div>
-    </div>
-
-    <!-- Player info -->
-    <div class="player-bar player-bottom">
-      <span class="player-label" id="player-label">You</span>
-      <div class="captured-pieces" id="captured-bottom"></div>
-    </div>
-
-    <!-- Move history -->
-    <div class="move-history-panel">
-      <div class="move-history-header">
-        <h3>Moves</h3>
-        <div class="review-nav">
-          <button id="btn-review-start" class="btn btn-small btn-secondary review-btn" title="First position">⏮</button>
-          <button id="btn-review-prev" class="btn btn-small btn-secondary review-btn" title="Previous move">◀</button>
-          <button id="btn-review-next" class="btn btn-small btn-secondary review-btn" title="Next move">▶</button>
-          <button id="btn-review-end" class="btn btn-small btn-secondary review-btn" title="Live position">⏭</button>
+    <div class="game-main">
+      <div class="game-main-left">
+        <div class="player-bar player-top">
+          <span class="player-label" id="opponent-label">Opponent</span>
+          <div class="captured-pieces" id="captured-top"></div>
+        </div>
+        <div class="board-wrapper">
+          <div id="chess-board"></div>
+        </div>
+        <div class="player-bar player-bottom">
+          <span class="player-label" id="player-label">You</span>
+          <div class="captured-pieces" id="captured-bottom"></div>
+        </div>
+        <div class="game-controls">
+          <button id="btn-resign" class="btn btn-danger btn-small">Resign</button>
+          <button id="btn-draw" class="btn btn-secondary btn-small">Offer Draw</button>
+          <button id="btn-flip" class="btn btn-secondary btn-small">Flip Board</button>
+        </div>
+        <div id="confirm-move-bar" class="confirm-move-bar" hidden>
+          <button id="btn-cancel-move" class="btn btn-cancel-move" title="Cancel move">✕</button>
+          <button id="btn-confirm-move" class="btn btn-confirm" title="Confirm move">✓</button>
         </div>
       </div>
-      <div id="move-list" class="move-list"></div>
+      <div class="game-main-right">
+        <div class="move-history-panel">
+          <div class="move-history-header">
+            <h3>Moves</h3>
+            <div class="review-nav">
+              <button id="btn-review-start" class="btn btn-small btn-secondary review-btn" title="First position">⏮</button>
+              <button id="btn-review-prev" class="btn btn-small btn-secondary review-btn" title="Previous move">◀</button>
+              <button id="btn-review-next" class="btn btn-small btn-secondary review-btn" title="Next move">▶</button>
+              <button id="btn-review-end" class="btn btn-small btn-secondary review-btn" title="Live position">⏭</button>
+            </div>
+          </div>
+          <div id="move-list" class="move-list"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- Game controls -->
-    <div class="game-controls">
-      <button id="btn-resign" class="btn btn-danger btn-small">Resign</button>
-      <button id="btn-draw" class="btn btn-secondary btn-small">Offer Draw</button>
-      <button id="btn-flip" class="btn btn-secondary btn-small">Flip Board</button>
-    </div>
-
-    <!-- Confirm move floating button -->
-    <div id="confirm-move-bar" class="confirm-move-bar" hidden>
-      <button id="btn-cancel-move" class="btn btn-cancel-move" title="Cancel move">✕</button>
-      <button id="btn-confirm-move" class="btn btn-confirm" title="Confirm move">✓</button>
-    </div>
-
-    <!-- Variant rules -->
+    <!-- Variant rules: spans both columns -->
     <div class="rules-panel" id="rules-iceskate">
       <h3>Ice Skate Rules</h3>
       <p>Like regular chess, except sliding pieces (bishops, rooks, and queens) <strong>cannot stop early</strong> — they must travel as far as possible in their chosen direction, stopping only when they hit the edge of the board or a friendly piece, or capture an enemy piece. They <em>may</em> stop at an intermediate square to block check, as this is the furthest they can go in this situation.</p>
       <p>This variant was made up by my sibling Luna.</p>
     </div>
-
     <div class="rules-panel rules-panel-angry" id="rules-angry" hidden>
       <h3>Angry Chess Rules</h3>
       <p>Like regular chess, except you can <strong>capture your own pieces</strong>! Every piece is a valid target, except your own king. Be careful: sacrificing your own material can open lines, but it can also backfire spectacularly.</p>
     </div>
-
     <div class="rules-panel rules-panel-dark" id="rules-dark" hidden>
       <h3>Dark Chess Rules</h3>
       <p>Standard chess, but the board is <strong>shrouded in darkness</strong>. You can always see your own pieces, but enemy pieces are completely hidden. Tap one of your pieces to <strong>shine a torch</strong> — its legal moves light up, revealing any enemies lurking in the path.</p>

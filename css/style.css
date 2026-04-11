@@ -1,3 +1,7 @@
+/* Extra padding for rules panel on game page only */
+.game-container > .rules-panel {
+  padding: 20px 24px 20px 24px;
+}
 /* ===== Reset & Base ===== */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -117,7 +121,7 @@ body {
 
 /* ===== Lobby (index.html) ===== */
 .container {
-  max-width: 480px;
+  max-width: 920px;
   width: 100%;
   text-align: center;
 }
@@ -128,17 +132,38 @@ body {
   color: white;
 }
 
-.lobby .card {
+.lobby-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
   text-align: left;
 }
 
-.lobby .card h2 {
+.lobby-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lobby-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lobby-left .card {
+  text-align: left;
+  margin-bottom: 0;
+}
+
+.lobby-left .card h2 {
   font-size: 1.2em;
   margin-bottom: 16px;
   color: var(--text-muted);
 }
 
-.lobby .btn {
+.lobby-left .btn {
   width: 100%;
   margin-bottom: 8px;
 }
@@ -290,12 +315,65 @@ body {
 
 /* ===== Game Page ===== */
 .game-container {
-  max-width: 640px;
+  max-width: 920px;
   width: 100%;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   position: relative;
+}
+
+.game-main {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+
+.game-main-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.game-main-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.move-history-panel {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 44px;
+}
+
+/* Make rules-panel span both columns */
+.game-container > .rules-panel,
+.game-container > .rules-panel-angry,
+.game-container > .rules-panel-dark {
+  grid-column: 1 / -1;
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .game-main {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .game-main-left, .game-main-right {
+    gap: 0;
+  }
+  .game-container > .rules-panel,
+  .game-container > .rules-panel-angry,
+  .game-container > .rules-panel-dark {
+    margin-top: 16px;
+  }
 }
 
 .game-header {
@@ -577,9 +655,9 @@ body {
 }
 
 .promotion-choice {
+  font-size: 48px;
   width: 60px;
   height: 60px;
-  font-size: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -632,23 +710,54 @@ body {
 }
 
 /* ===== Rules Panel ===== */
+
 .rules-panel {
-  width: 100%;
-  max-width: 480px;
-  margin-top: 16px;
   background: var(--bg-card);
   border-radius: 12px;
-  padding: 16px;
+  padding: 0;
+  text-align: left;
+  overflow: hidden;
+}
+
+.rules-panel details {
+  padding: 0 16px 12px 16px;
+  border: none;
+}
+
+.rules-panel details[open] {
+  padding-bottom: 16px;
+}
+
+.rules-panel summary {
+  cursor: pointer;
+  outline: none;
+  padding: 16px 0 8px 0;
+  margin: 0 -16px 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  background: none;
+  list-style: none;
+  font-size: 1em;
+  transition: background 0.15s;
+  border-radius: 12px 12px 0 0;
+}
+
+.rules-panel summary:hover,
+.rules-panel summary:focus {
+  background: rgba(74,158,255,0.07);
+}
+
+.rules-panel h3 {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+  display: inline;
 }
 
 .rules-panel h3 {
   font-size: 14px;
   color: var(--text-muted);
   margin-bottom: 8px;
-}
-
-.rules-panel {
-  text-align: left;
 }
 
 .rules-panel p {
@@ -675,6 +784,10 @@ body {
   color: var(--danger);
 }
 
+.rules-panel-960 h3 {
+  color: #a8d8a8;
+}
+
 /* ===== Move History ===== */
 .move-history-panel {
   width: 100%;
@@ -692,7 +805,6 @@ body {
 }
 
 .move-list {
-  height: 150px;
   overflow-y: auto;
   font-family: monospace;
   font-size: 14px;
@@ -724,6 +836,8 @@ body {
   display: flex;
   gap: 8px;
   margin-top: 12px;
+  justify-content: center;
+  align-self: center;
 }
 
 /* ===== Draw Offer Banner ===== */
@@ -1034,6 +1148,12 @@ body {
 }
 
 /* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .lobby-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 520px) {
   body {
     padding: 8px;
@@ -1050,7 +1170,7 @@ body {
   .promotion-choice {
     width: 50px;
     height: 50px;
-    font-size: 32px;
+    font-size: 48px;
   }
 
   .castling-choice {
