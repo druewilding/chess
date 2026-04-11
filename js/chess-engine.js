@@ -524,6 +524,21 @@ export class ChessEngine {
         if (Math.max(absDr, absDf) > maxDist) return false;
         return this.isSlidingPathClear(fromRank, fromFile, targetRank, targetFile);
       }
+      case 'amazon': {
+        // Amazon attacks as both queen and knight
+        // Queen part
+        if ((dr === 0 || df === 0 || absDr === absDf) && (dr !== 0 || df !== 0)) {
+          const maxDist = this.maxDistance.queen || 7;
+          if (Math.max(absDr, absDf) <= maxDist && this.isSlidingPathClear(fromRank, fromFile, targetRank, targetFile)) {
+            return true;
+          }
+        }
+        // Knight part
+        if ((absDr === 2 && absDf === 1) || (absDr === 1 && absDf === 2)) {
+          return true;
+        }
+        return false;
+      }
       default:
         return false;
     }
