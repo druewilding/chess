@@ -231,7 +231,9 @@
       reviewIndex = index;
       engine.deserialize(positionSnapshots[index]);
       ui.interactive = false;
-      if (ui.dark && !engine.gameOver) ui.darkRevealed = false;
+      // Dark Chess: check live state (not reviewed snapshot) to decide visibility
+      const liveGameOver = positionSnapshots.length > 0 && positionSnapshots[positionSnapshots.length - 1].gameOver;
+      if (ui.dark) ui.darkRevealed = liveGameOver;
       ui.setLastMove(null);
       ui.clearSelection(); // renders the board
       updateStatus();
@@ -248,10 +250,14 @@
         const history = Array.isArray(snap.moveHistory) ? snap.moveHistory : Object.values(snap.moveHistory || {});
         if (history.length > 0) {
           const move = history[history.length - 1];
-          const pieceType = move.promotion ? move.promotion : move.piece.type;
-          const symbol = ui.pieceSymbols[move.piece.color][pieceType];
-          ui.animateMove(move.from.rank, move.from.file, move.to.rank, move.to.file, symbol, move.piece.color, afterAnimation);
-          return;
+          // Dark Chess: skip enemy animations during review if game is still in progress
+          const suppressAnim = ui.dark && !liveGameOver && move.piece.color !== myColor;
+          if (!suppressAnim) {
+            const pieceType = move.promotion ? move.promotion : move.piece.type;
+            const symbol = ui.pieceSymbols[move.piece.color][pieceType];
+            ui.animateMove(move.from.rank, move.from.file, move.to.rank, move.to.file, symbol, move.piece.color, afterAnimation);
+            return;
+          }
         }
       } else if (step === -1) {
         // Backward: animate reverse of the undone move
@@ -259,9 +265,13 @@
         const history = Array.isArray(snap.moveHistory) ? snap.moveHistory : Object.values(snap.moveHistory || {});
         if (history.length > 0) {
           const move = history[history.length - 1];
-          const symbol = ui.pieceSymbols[move.piece.color][move.piece.type];
-          ui.animateMove(move.to.rank, move.to.file, move.from.rank, move.from.file, symbol, move.piece.color, afterAnimation);
-          return;
+          // Dark Chess: skip enemy animations during review if game is still in progress
+          const suppressAnim = ui.dark && !liveGameOver && move.piece.color !== myColor;
+          if (!suppressAnim) {
+            const symbol = ui.pieceSymbols[move.piece.color][move.piece.type];
+            ui.animateMove(move.to.rank, move.to.file, move.from.rank, move.from.file, symbol, move.piece.color, afterAnimation);
+            return;
+          }
         }
       }
 
@@ -788,7 +798,9 @@
       }
 
       // Dark Chess: blur opponent moves while the game is still in progress
-      const isDarkLive = engine.dark && !engine.gameOver;
+      // Check live state, not the reviewed snapshot, to decide visibility
+      const liveGameOver = positionSnapshots.length > 0 && positionSnapshots[liveIndex].gameOver;
+      const isDarkLive = engine.dark && !liveGameOver;
 
       for (let i = 0; i < history.length; i += 2) {
         const moveNum = Math.floor(i / 2) + 1;
