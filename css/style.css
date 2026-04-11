@@ -143,13 +143,13 @@ body {
 .lobby-left {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .lobby-right {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .lobby-left .card {
