@@ -1,7 +1,7 @@
 {
-  "name": "Ice Skate Chess",
-  "short_name": "Ice Chess",
-  "description": "Online chess where sliding pieces must travel as far as possible.",
+  "name": "Chess Variants",
+  "short_name": "Chess Variants",
+  "description": "Chess variants such as Ice Skate Chess, Angry Chess, Dark Chess and Superchess",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1a1a2e",
