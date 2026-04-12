@@ -466,7 +466,7 @@
             // Discourage pointless king walks (castling already rewarded above)
             if (piece.type === 'king' && !move.castling) score -= 3;
 
-            scoredMoves.push({ fromRank: rank, fromFile: file, toRank: move.rank, toFile: move.file, score, castling: move.castling || null });
+            scoredMoves.push({ fromRank: rank, fromFile: file, toRank: move.rank, toFile: move.file, score, castling: move.castling || null, promotion: move.promotion || null });
           }
         }
       }
@@ -487,12 +487,12 @@
         chosen = bestMoves[Math.floor(Math.random() * bestMoves.length)];
       }
 
-      // Detect pawn promotion; always promote to queen
+      // Detect pawn promotion; use the move's promotion property (already filtered above)
       const movingPiece = engine.getPiece(chosen.fromRank, chosen.fromFile);
       let promotion = null;
       if (movingPiece && movingPiece.type === 'pawn') {
         if ((botColor === 'white' && chosen.toRank === 0) || (botColor === 'black' && chosen.toRank === 7)) {
-          promotion = 'queen';
+          promotion = chosen.promotion || null;
         }
       }
 
