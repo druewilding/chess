@@ -58,7 +58,7 @@
     </div>
 
     <!-- Variant rules: spans both columns -->
-    <div class="rules-panel" id="rules-iceskate">
+    <div class="rules-panel" id="rules-iceskate" hidden>
       <h3>Ice Skate Rules</h3>
       <p>Like regular chess, except sliding pieces (bishops, rooks, and queens) <strong>cannot stop early</strong> — they must travel as far as possible in their chosen direction, stopping only when they hit the edge of the board or a friendly piece, or capture an enemy piece. They <em>may</em> stop at an intermediate square to block check, as this is the furthest they can go in this situation.</p>
       <p>This variant was made up by my sibling Luna.</p>
@@ -70,6 +70,10 @@
     <div class="rules-panel rules-panel-dark" id="rules-dark" hidden>
       <h3>Dark Chess Rules</h3>
       <p>Standard chess, but the board is <strong>shrouded in darkness</strong>. You can always see your own pieces, but enemy pieces are completely hidden. Tap one of your pieces to <strong>shine a torch</strong> — its legal moves light up, revealing any enemies lurking in the path.</p>
+    </div>
+    <div class="rules-panel rules-panel-superchess" id="rules-superchess" hidden>
+      <h3>Superchess Rules</h3>
+      <p>The same as standard chess, until you get to promotion, at which point you can claim an Amazon, a powerful piece combining the abilities of both a queen and a knight, making it a formidable addition to your arsenal.</p>
     </div>
 
     <!-- Draw offer banner -->
@@ -133,7 +137,7 @@
     // ---- Position history & move review ----
     let positionSnapshots = [];  // snapshots[i] = serialised engine state after i moves
     let reviewIndex = null;      // null = live; number = reviewing that snapshot
-    let gameVariant = null;      // 'iceskate', 'iceskate-960', 'angry', 'angry-960', 'superchess'
+    let gameVariant = null;      // 'iceskate', 'iceskate-960', 'angry', 'angry-960', 'dark', 'dark-960', 'superchess', 'superchess-960'
 
     // Bot mode: hash looks like #bot:iceskate:white or #bot:iceskate-960:black
     const isBotMode = gameId.startsWith('bot:');
@@ -302,32 +306,40 @@
     }
 
     function updateVariantDisplay() {
+      const isIceskate = engine.iceskate;
       const isDark = engine.dark;
       const isAngry = engine.angry;
-      const is960 = gameVariant === 'iceskate-960' || gameVariant === 'angry-960' || gameVariant === 'dark-960';
+      const isSuperchess = engine.superchess;
+      const is960 = gameVariant.endsWith('-960');
       let label;
       if (isDark) {
         label = is960 ? 'Dark Chess960' : 'Dark Chess';
       } else if (isAngry) {
         label = is960 ? 'Angry Chess960' : 'Angry Chess';
+      } else if (isSuperchess) {
+        label = is960 ? 'Superchess960' : 'Superchess';
       } else {
         label = is960 ? 'Ice Skate Chess960' : 'Ice Skate Chess';
       }
       const labelEl = document.getElementById('variant-label');
       labelEl.textContent = label;
-      if (isDark) {
+      if (isIceskate) {
+        labelEl.classList.add('variant-iceskate');
+        labelEl.classList.remove('variant-dark', 'variant-angry', 'variant-superchess');
+      } else if (isDark) {
         labelEl.classList.add('variant-dark');
-        labelEl.classList.remove('variant-iceskate', 'variant-angry');
+        labelEl.classList.remove('variant-iceskate', 'variant-angry', 'variant-superchess');
       } else if (isAngry) {
         labelEl.classList.add('variant-angry');
-        labelEl.classList.remove('variant-iceskate', 'variant-dark');
-      } else {
-        labelEl.classList.add('variant-iceskate');
-        labelEl.classList.remove('variant-angry', 'variant-dark');
+        labelEl.classList.remove('variant-iceskate', 'variant-dark', 'variant-superchess');
+      } else if (isSuperchess) {
+        labelEl.classList.add('variant-superchess');
+        labelEl.classList.remove('variant-iceskate', 'variant-dark', 'variant-angry');
       }
-      document.getElementById('rules-iceskate').hidden = isAngry || isDark;
+      document.getElementById('rules-iceskate').hidden = !isIceskate;
       document.getElementById('rules-angry').hidden = !isAngry;
       document.getElementById('rules-dark').hidden = !isDark;
+      document.getElementById('rules-superchess').hidden = !isSuperchess;
       document.title = label;
     }
 
@@ -340,11 +352,12 @@
       }
 
       // Set up rules based on variant
+      const isIceskate = variant === 'iceskate' || variant === 'iceskate-960';
       const isAngry = variant === 'angry' || variant === 'angry-960';
       const isDark = variant === 'dark' || variant === 'dark-960';
+      const isSuperchess = variant === 'superchess' || variant === 'superchess-960';
       const is960 = variant.endsWith('-960');
-      const isSuperchess = variant === 'superchess';
-      engine.iceskate = !isAngry && !isDark && !isSuperchess;
+      engine.iceskate = isIceskate;
       engine.angry = isAngry;
       engine.dark = isDark;
       engine.superchess = isSuperchess;
@@ -418,8 +431,8 @@
           for (const move of moves) {
             // In Superchess, allow Amazon promotion; otherwise, only queen
             if (move.promotion && (
-              (gameVariant === 'superchess' && move.promotion !== 'amazon' && move.promotion !== 'queen') ||
-              (gameVariant !== 'superchess' && move.promotion !== 'queen')
+              (gameVariant.startsWith('superchess') && move.promotion !== 'amazon' && move.promotion !== 'queen') ||
+              (!gameVariant.startsWith('superchess') && move.promotion !== 'queen')
             )) continue;
 
             let score = 0;
