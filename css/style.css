@@ -350,12 +350,14 @@ body {
 .game-main-left {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 12px;
 }
 
 .game-main-right {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 12px;
   height: 100%;
 }
@@ -368,12 +370,9 @@ body {
 }
 
 /* Make rules-panel span both columns */
-.game-container > .rules-panel,
-.game-container > .rules-panel-angry,
-.game-container > .rules-panel-dark {
+.game-container .rules-panel {
   grid-column: 1 / -1;
-  margin-top: 24px;
-  margin-bottom: 0;
+  margin: 24px auto;
 }
 
 @media (max-width: 900px) {
@@ -384,10 +383,9 @@ body {
   .game-main-left, .game-main-right {
     gap: 0;
   }
-  .game-container > .rules-panel,
-  .game-container > .rules-panel-angry,
-  .game-container > .rules-panel-dark {
+  .game-container .rules-panel {
     margin-top: 16px;
+    max-width: 480px;
   }
 }
 
@@ -780,11 +778,6 @@ body {
   border-radius: 12px 12px 0 0;
 }
 
-.rules-panel summary:hover,
-.rules-panel summary:focus {
-  background: rgba(74,158,255,0.07);
-}
-
 .rules-panel h3 {
   font-size: 14px;
   color: var(--text-muted);
@@ -830,7 +823,7 @@ body {
 .move-history-panel {
   width: 100%;
   max-width: 480px;
-  margin-top: 16px;
+  margin-top: 24px;
   background: var(--bg-card);
   border-radius: 12px;
   padding: 16px;
