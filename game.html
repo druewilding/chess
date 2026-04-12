@@ -801,10 +801,12 @@
         const liveIndex = positionSnapshots.length - 1;
         statusEl.textContent = `Move ${reviewIndex} / ${liveIndex}`;
         statusEl.className = 'game-status review-mode';
+        updateGameOverButtons();
         return;
       }
       if (engine.gameOver) {
         statusEl.textContent = '';
+        updateGameOverButtons();
         return;
       }
       if (isMyTurn) {
@@ -813,6 +815,24 @@
       } else {
         statusEl.textContent = isBotMode ? "Bot's turn…" : "Opponent's turn";
         statusEl.className = 'game-status';
+      }
+      updateGameOverButtons();
+    }
+
+    function updateGameOverButtons() {
+      const resignBtn = document.getElementById('btn-resign');
+      const drawBtn = document.getElementById('btn-draw');
+      if (!resignBtn || !drawBtn) return;
+      if (engine.gameOver) {
+        resignBtn.disabled = true;
+        drawBtn.disabled = true;
+        resignBtn.classList.add('btn-disabled');
+        drawBtn.classList.add('btn-disabled');
+      } else {
+        resignBtn.disabled = false;
+        drawBtn.disabled = false;
+        resignBtn.classList.remove('btn-disabled');
+        drawBtn.classList.remove('btn-disabled');
       }
     }
 
@@ -978,6 +998,7 @@
       title.textContent = titleText;
       reason.textContent = reasonText;
 
+      updateGameOverButtons();
       notifyGameOver(titleText, reasonText);
     }
 

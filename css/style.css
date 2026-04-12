@@ -1,3 +1,11 @@
+/* Visually dimmed button for disabled state */
+.btn-disabled,
+button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  filter: grayscale(40%);
+  cursor: not-allowed;
+}
 /* King icon for color picker */
 .color-choice-piece img {
   width: 1em;
