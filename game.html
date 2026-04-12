@@ -630,6 +630,7 @@
       updateLabels();
       positionSnapshots = [captureSnapshot()];
       updateReviewNavButtons();
+      updateGameOverButtons();
 
       // Show waiting overlay for the creator while opponent hasn't joined yet
       if (localStorage.getItem('chess-creator-' + gameId)) {
@@ -672,6 +673,7 @@
           // Always load the live state to build snapshots
           engine.deserialize(state);
           syncSnapshots();
+          updateGameOverButtons();
 
           // Update variant display on first load (flags come from deserialized state)
           if (!initialStateLoaded) {
