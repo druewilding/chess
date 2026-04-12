@@ -32,7 +32,7 @@ export class ChessUI {
         bishop:'assets/pieces/white/bishop.webp',
         knight:'assets/pieces/white/knight.webp',
         pawn:  'assets/pieces/white/pawn.webp',
-        amazon: 'assets/pieces/white/amazon.webp', // User to provide image
+        amazon: 'assets/pieces/white/amazon.webp',
       },
       black: {
         king:  'assets/pieces/black/king.webp',
@@ -41,7 +41,7 @@ export class ChessUI {
         bishop:'assets/pieces/black/bishop.webp',
         knight:'assets/pieces/black/knight.webp',
         pawn:  'assets/pieces/black/pawn.webp',
-        amazon: 'assets/pieces/black/amazon.webp', // User to provide image
+        amazon: 'assets/pieces/black/amazon.webp',
       }
     };
 

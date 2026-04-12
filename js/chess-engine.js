@@ -858,6 +858,7 @@ export class ChessEngine {
       iceskate: this.iceskate,
       angry: this.angry,
       dark: this.dark,
+      superchess: this.superchess,
       positionHistory: this.positionHistory,
       startingBoard: this.startingBoard,
       initialKingFile: this.initialKingFile ?? null,
@@ -903,6 +904,7 @@ export class ChessEngine {
     this.iceskate = state.iceskate || false;
     this.angry = state.angry || false;
     this.dark = state.dark || false;
+    this.superchess = state.superchess || false;
     this.positionHistory = state.positionHistory
       ? (typeof state.positionHistory === 'object' ? { ...state.positionHistory } : {})
       : {};
