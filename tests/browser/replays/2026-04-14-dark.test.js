@@ -3,6 +3,7 @@
 // the entire game, including history navigation and promotion preview.
 
 import { test } from "@playwright/test";
+
 import { TwoPlayerGame } from "../harness.js";
 
 // Helper: assert captures from both POVs in one call.
@@ -147,73 +148,93 @@ test.describe("Dark Chess replay — 2026-04-14", () => {
 
     await game.play("Nxe6", "Bxe6");
     await assertBothCaptures(game, {
-      white: [
-        "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "rook", "rook", "queen",
-      ],
-      black: [
-        "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "rook", "rook", "queen",
-      ],
+      white: ["pawn", "pawn", "pawn", "pawn", "pawn", "knight", "knight", "bishop", "rook", "rook", "queen"],
+      black: ["pawn", "pawn", "pawn", "pawn", "knight", "knight", "bishop", "rook", "rook", "queen"],
     });
 
     await game.play("Bb5", "Bxb3");
     await assertBothCaptures(game, {
-      white: [
-        "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "rook", "rook", "queen",
-      ],
-      black: [
-        "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "rook", "rook", "queen",
-      ],
+      white: ["pawn", "pawn", "pawn", "pawn", "pawn", "knight", "knight", "bishop", "rook", "rook", "queen"],
+      black: ["pawn", "pawn", "pawn", "pawn", "pawn", "knight", "knight", "bishop", "rook", "rook", "queen"],
     });
 
     await game.play("cxb3", "h5");
     await assertBothCaptures(game, {
-      white: [
-        "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
-      ],
-      black: [
-        "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "rook", "rook", "queen",
-      ],
+      white: ["pawn", "pawn", "pawn", "pawn", "pawn", "knight", "knight", "bishop", "bishop", "rook", "rook", "queen"],
+      black: ["pawn", "pawn", "pawn", "pawn", "pawn", "knight", "knight", "bishop", "rook", "rook", "queen"],
     });
 
     await game.play("h4", "b6", "d4", "Kf6", "Be2", "b5", "Bxh5", "Kg7");
     await assertBothCaptures(game, {
       white: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
+        "queen",
       ],
-      black: [
-        "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "rook", "rook", "queen",
-      ],
+      black: ["pawn", "pawn", "pawn", "pawn", "pawn", "knight", "knight", "bishop", "rook", "rook", "queen"],
     });
 
     await game.play("d5", "Kh6", "Bg6", "Kxg6");
     await assertBothCaptures(game, {
       white: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
+        "queen",
       ],
-      black: [
-        "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
-      ],
+      black: ["pawn", "pawn", "pawn", "pawn", "pawn", "knight", "knight", "bishop", "bishop", "rook", "rook", "queen"],
     });
 
     await game.play("d6", "Kf5", "d7", "Kg4", "b4", "Kxh4");
     await assertBothCaptures(game, {
       white: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
+        "queen",
       ],
       black: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
+        "queen",
       ],
     });
 
@@ -221,12 +242,34 @@ test.describe("Dark Chess replay — 2026-04-14", () => {
     await game.play("d8=Q+");
     await assertBothCaptures(game, {
       white: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
+        "queen",
       ],
       black: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
       ],
     });
 
@@ -237,12 +280,35 @@ test.describe("Dark Chess replay — 2026-04-14", () => {
     await game.play("Kxg2", "Ke5");
     await assertBothCaptures(game, {
       white: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
+        "queen",
       ],
       black: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
       ],
     });
 
@@ -271,23 +337,67 @@ test.describe("Dark Chess replay — 2026-04-14", () => {
     await game.goToMove("white", 73);
     await game.assertCaptures("white", {
       lower: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
+        "queen",
       ],
       upper: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
       ],
     });
     await game.goToMove("black", 73);
     await game.assertCaptures("black", {
       lower: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
       ],
       upper: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
+        "queen",
       ],
     });
 
@@ -296,12 +406,36 @@ test.describe("Dark Chess replay — 2026-04-14", () => {
     await game.goToLive("black");
     await assertBothCaptures(game, {
       white: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook", "queen",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
+        "queen",
       ],
       black: [
-        "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
-        "knight", "knight", "bishop", "bishop", "rook", "rook",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "pawn",
+        "knight",
+        "knight",
+        "bishop",
+        "bishop",
+        "rook",
+        "rook",
       ],
     });
   });
