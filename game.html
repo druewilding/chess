@@ -146,6 +146,7 @@
       }
 
       const engine = new ChessEngine();
+      window.engine = engine; // exposed for Playwright browser tests & devtools debugging
       const gm = new GameManager();
 
       let ui;

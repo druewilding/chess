@@ -123,10 +123,10 @@ async function readCapturesWithPreview(page) {
     function readPen(container) {
       if (!container) return { pieces: [], preview: [] };
       const normal = [...container.querySelectorAll("img.captured-piece:not(.captured-piece--preview)")].map(
-        (img) => img.alt,
+        (img) => img.alt
       );
       const preview = [...container.querySelectorAll("img.captured-piece.captured-piece--preview")].map(
-        (img) => img.alt,
+        (img) => img.alt
       );
       const parent = container.parentElement;
       const advEl = parent?.querySelector(".captured-advantage");
@@ -185,8 +185,8 @@ export class TwoPlayerGame {
     await p1.click(`#${btnId}`);
     await p1.click(`#btn-color-${creatorColor}`);
 
-    // Wait for navigation to game.html
-    await p1.waitForURL(/game\.html#/);
+    // Wait for navigation to game.html (serve may strip the .html extension)
+    await p1.waitForURL(/game(\.html)?#/);
 
     // Wait for the waiting overlay to appear (has the game code)
     await p1.waitForSelector("#game-code-display");
@@ -198,7 +198,7 @@ export class TwoPlayerGame {
     await p2.goto(`${BASE}/game.html#${gameCode}`);
 
     // Wait for both pages to be active (waiting overlay hidden on p1)
-    await p1.waitForSelector("#waiting-overlay[hidden]", { timeout: 15_000 });
+    await p1.waitForFunction(() => document.getElementById("waiting-overlay").hidden, { timeout: 15_000 });
 
     // Wait for p2 to have the board rendered
     await p2.waitForSelector("#chess-board .square", { timeout: 10_000 });
@@ -208,10 +208,13 @@ export class TwoPlayerGame {
     const blackPage = creatorColor === "white" ? p2 : p1;
 
     // Give Firebase a moment to fully sync both sides
-    await whitePage.waitForFunction(() => {
-      const status = document.getElementById("game-status");
-      return status && status.textContent.includes("Your turn");
-    }, { timeout: 10_000 });
+    await whitePage.waitForFunction(
+      () => {
+        const status = document.getElementById("game-status");
+        return status && status.textContent.includes("Your turn");
+      },
+      { timeout: 10_000 }
+    );
 
     return new TwoPlayerGame(whitePage, blackPage);
   }
@@ -272,27 +275,28 @@ export class TwoPlayerGame {
     }
 
     // Confirm the move
-    await page.waitForSelector("#confirm-move-bar:not([hidden])", { timeout: 5_000 });
+    await page.waitForFunction(() => !document.getElementById("confirm-move-bar").hidden, { timeout: 5_000 });
     await page.click("#btn-confirm-move");
 
-    // Wait for the move to be applied locally (confirm bar hidden)
-    await page.waitForSelector("#confirm-move-bar[hidden]", { timeout: 5_000 });
+    // Wait for the move to be applied locally (confirm bar hidden again)
+    await page.waitForFunction(() => document.getElementById("confirm-move-bar").hidden, { timeout: 5_000 });
 
     this._moveCount++;
 
     // Wait for the move to sync to the other player via Firebase.
-    // We detect this by waiting for the other page's status to update.
-    if (!await this._isGameOver(page)) {
-      const other = this.activePage; // after incrementing, activePage is now the next mover
-      await other.waitForFunction(
-        (expectedTurn) => {
-          const status = document.getElementById("game-status");
-          return status && status.textContent.includes("Your turn");
-        },
-        this.activeColor,
-        { timeout: 10_000 },
-      );
-    }
+    // Accept either "Your turn" (game continues) or game over (checkmate/stalemate/draw).
+    const other = this.activePage; // after incrementing, activePage is now the next mover
+    await other.waitForFunction(
+      () => {
+        const status = document.getElementById("game-status");
+        return (
+          (status && status.textContent.includes("Your turn")) ||
+          !document.getElementById("game-over-overlay").hidden ||
+          engine.gameOver
+        );
+      },
+      { timeout: 10_000 }
+    );
   }
 
   async _playCastling(page, side) {
@@ -357,9 +361,7 @@ export class TwoPlayerGame {
           if (match) return { rank: r, file: f };
         }
       }
-      throw new Error(
-        `No source for ${p.pieceType} → ${FILES[p.toFile]}${RANKS[p.toRank]} (${engine.turn} to move)`,
-      );
+      throw new Error(`No source for ${p.pieceType} → ${FILES[p.toFile]}${RANKS[p.toRank]} (${engine.turn} to move)`);
     }, parsed);
   }
 
@@ -467,7 +469,7 @@ export class TwoPlayerGame {
    */
   async assertGameOver(color, expectedTitle) {
     const page = this.pages[color];
-    await page.waitForSelector("#game-over-overlay:not([hidden])", { timeout: 5_000 });
+    await page.waitForFunction(() => !document.getElementById("game-over-overlay").hidden, { timeout: 5_000 });
     if (expectedTitle) {
       const title = await page.textContent("#game-over-title");
       expect(title.trim(), `${color} game-over title`).toBe(expectedTitle);
@@ -481,7 +483,7 @@ export class TwoPlayerGame {
   async dismissGameOver(color) {
     const page = this.pages[color];
     await page.click("#btn-review-game");
-    await page.waitForSelector("#game-over-overlay[hidden]", { timeout: 3_000 });
+    await page.waitForFunction(() => document.getElementById("game-over-overlay").hidden, { timeout: 3_000 });
     return this;
   }
 
