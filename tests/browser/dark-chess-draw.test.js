@@ -9,6 +9,7 @@
 // so goToPosition() correctly keeps darkRevealed = true throughout review.
 
 import { test } from "@playwright/test";
+
 import { TwoPlayerGame } from "./harness.js";
 
 test.describe("Dark Chess — agreed draw reveals board in history review", () => {

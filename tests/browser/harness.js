@@ -581,9 +581,7 @@ export class TwoPlayerGame {
    */
   async assertMoveNotationRevealed(color) {
     const page = this.pages[color];
-    const count = await page.evaluate(
-      () => document.querySelectorAll(".move-notation--dark-hidden").length
-    );
+    const count = await page.evaluate(() => document.querySelectorAll(".move-notation--dark-hidden").length);
     expect(count, `${color} move notation should have no hidden entries`).toBe(0);
     return this;
   }
