@@ -1080,8 +1080,13 @@
 
         // Sanity-check: the capture-pen material advantage must equal the board
         // material advantage at all times. If they diverge, display a warning.
-        // Skip the check while a move is being previewed (pending confirm).
-        if (!ui.pendingMoveConfirm) {
+        // Skip the check while a move is being previewed (pending confirm), but
+        // also clear any pre-existing warning so it doesn't linger during preview.
+        const warningId = "capture-inconsistency-warning";
+        let warningEl = document.getElementById(warningId);
+        if (ui.pendingMoveConfirm) {
+          if (warningEl) warningEl.remove();
+        } else {
           const pieceValues = { pawn: 1, knight: 3, bishop: 3, rook: 5, queen: 9, amazon: 13 };
           let whiteBoard = 0,
             blackBoard = 0;
@@ -1101,8 +1106,6 @@
           for (const t of engine.capturedPieces.black) blackPen += pieceValues[t] || 0;
           const penAdvantage = whitePen - blackPen;
 
-          const warningId = "capture-inconsistency-warning";
-          let warningEl = document.getElementById(warningId);
           if (boardAdvantage !== penAdvantage) {
             if (!warningEl) {
               warningEl = document.createElement("div");
