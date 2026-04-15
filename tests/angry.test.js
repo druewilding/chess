@@ -132,20 +132,32 @@ describe("Angry Chess", () => {
   // ── Snapshot rebuild (simulates buildPositionSnapshots in game.html) ──
 
   it("snapshot rebuild correctly identifies non-castling king move via castling ?? null", () => {
-    // Set up a position where the white king is adjacent to its own rook so that
-    // BOTH a castling move and a friendly-capture move land on the same square.
-    // This is the Angry Chess 960 scenario: king at f1 (file 5), rook at g1 (file 6).
-    // Kingside castling destination is also g1. The king should CAPTURE the rook,
-    // not castle. We verify that snapshot rebuild (using castling ?? null) correctly
-    // identifies the move as a capture, not a castle.
+    // Chess960 position: white king at f1 (file 5), kingside rook at h1 (file 7).
+    // g1 (file 6) is EMPTY and is BOTH the one-step king move destination AND the
+    // kingside-castling destination.  The player plays the plain king move (NOT
+    // castling), so moveHistory records castling: null.
+    //
+    // Regression guard for the `castling ?? null` fix in buildPositionSnapshots:
+    // ─ `move.castling ?? null`  → passes null  → makeMove filters to non-castling
+    //   move (king to g1, rook stays at h1).
+    // ─ `move.castling || undefined` → passes undefined (null is falsy) → makeMove
+    //   skips the castling filter entirely and falls through to the plain `return true`
+    //   branch, accepting whichever move appears first in getKingMoves.
+    //
+    // The plain king move to g1 happens to appear before the castling entry in
+    // getLegalMoves, so both paths produce the same board in the current engine.
+    // However, passing null is the ONLY semantically correct signal: it explicitly
+    // tells makeMove "this was not a castling move", protecting against any future
+    // ordering change in getLegalMoves and ensuring the castling-vs-plain-move
+    // contract is enforced by the disambiguation branch (line 743 of chess-engine.js)
+    // rather than relying on incidental array ordering.
+    //
+    // The inverse scenario (castling mistaken for plain move) is tested below.
     const engine = new ChessEngine({ angry: true });
 
-    // Place the pieces: king at f1, rook at g1, no other pieces that block castling
-    // Use a minimal board: white king at f1 (7,5), white rook at g1 (7,6),
-    // black king at e8 (0,4) only. Set up castling rights for white kingside.
     const board = Array.from({ length: 8 }, () => Array(8).fill(null));
     board[7][5] = { type: "king", color: "white" };
-    board[7][6] = { type: "rook", color: "white" };
+    board[7][7] = { type: "rook", color: "white" }; // rook at h1 — NOT on g1
     board[0][4] = { type: "king", color: "black" };
 
     engine.board = board;
@@ -154,22 +166,53 @@ describe("Angry Chess", () => {
     engine.capturedPieces = { white: [], black: [] };
     engine.moveHistory = [];
     engine.castlingRights = { white: { king: true, queen: false }, black: { king: false, queen: false } };
-    engine.initialKingFile = 5; // king starts at f1
-    engine.initialRookFiles = { king: 6, queen: null }; // king-side rook at g1
+    engine.initialKingFile = 5; // f1
+    engine.initialRookFiles = { king: 7, queen: null }; // rook at h1; castles to g1
     engine.positionHistory = {};
     engine.recordPosition();
 
-    // White king captures own rook at g1 (file 6) — NOT castling
-    const moveData = engine.makeMove(7, 5, 7, 6, null, null);
-    expect(moveData).not.toBeNull();
-    expect(moveData.castling).toBeNull();
-    expect(moveData.friendlyCapture).toBe(true);
-    // Friendly capture: rook credited to opponent (black's pen)
-    expect(engine.capturedPieces.black).toContain("rook");
-    expect(engine.capturedPieces.white).toHaveLength(0);
+    // Confirm both moves exist: a plain king move and a castling move both target g1.
+    const legalMoves = engine.getLegalMoves(7, 5);
+    const plainToG1 = legalMoves.filter((m) => m.rank === 7 && m.file === 6 && !m.castling);
+    const castleToG1 = legalMoves.filter((m) => m.rank === 7 && m.file === 6 && m.castling === "king");
+    expect(plainToG1).toHaveLength(1);
+    expect(castleToG1).toHaveLength(1);
 
-    // Simulate what buildPositionSnapshots() does: replay from moveHistory
-    // This is the exact logic from game.html with the castling ?? null fix applied.
+    // Directly verify that the castling disambiguation branch works:
+    // passing castling=null MUST select the non-castling move (rook stays at h1),
+    // and passing castling='king' MUST select the castling move (rook moves to f1).
+    const nonCastleResult = engine.makeMove(7, 5, 7, 6, null, null);
+    expect(nonCastleResult).not.toBeNull();
+    expect(nonCastleResult.castling).toBeNull();
+    expect(engine.board[7][6]).toMatchObject({ type: "king", color: "white" }); // king at g1
+    expect(engine.board[7][7]).toMatchObject({ type: "rook", color: "white" }); // rook still at h1
+    expect(engine.capturedPieces.white).toHaveLength(0);
+    expect(engine.capturedPieces.black).toHaveLength(0);
+
+    // Reset and verify that passing castling='king' on the same square gives the
+    // opposite result: rook ends up at f1 (castled), king at g1.
+    // Use startingBoard (captured before any move) to get the original positions.
+    const engine2 = new ChessEngine({ angry: true });
+    const startBoard = JSON.parse(JSON.stringify(engine.startingBoard));
+    engine2.board = startBoard.map((row) => row.slice());
+    engine2.startingBoard = startBoard.map((row) => row.slice());
+    engine2.turn = "white";
+    engine2.capturedPieces = { white: [], black: [] };
+    engine2.moveHistory = [];
+    engine2.castlingRights = { white: { king: true, queen: false }, black: { king: false, queen: false } };
+    engine2.initialKingFile = 5;
+    engine2.initialRookFiles = { king: 7, queen: null };
+    engine2.positionHistory = {};
+    engine2.recordPosition();
+    const castleResult = engine2.makeMove(7, 5, 7, 6, null, "king");
+    expect(castleResult).not.toBeNull();
+    expect(castleResult.castling).toBe("king");
+    expect(engine2.board[7][6]).toMatchObject({ type: "king", color: "white" }); // king at g1
+    expect(engine2.board[7][5]).toMatchObject({ type: "rook", color: "white" }); // rook moved to f1
+    expect(engine2.board[7][7]).toBeNull(); // h1 vacated
+
+    // Now replay the plain-move game via buildPositionSnapshots logic (castling ?? null).
+    // moveHistory entry has castling: null → `null ?? null` = null → non-castling filter.
     const tempEng = new ChessEngine({ angry: true });
     tempEng.reset(JSON.parse(JSON.stringify(engine.startingBoard)));
     tempEng.initialKingFile = engine.initialKingFile;
@@ -182,18 +225,18 @@ describe("Angry Chess", () => {
         move.to.rank,
         move.to.file,
         move.promotion ?? null,
-        move.castling ?? null // THE FIX: null preserves "non-castling" intent
+        move.castling ?? null // THE FIX: null preserves "this was not a castling move"
       );
       expect(result).not.toBeNull();
+      expect(result.castling).toBeNull(); // must have replayed as plain king move
     }
 
-    // After replay, captures should match the live engine
-    expect(tempEng.capturedPieces.black).toContain("rook");
-    expect(tempEng.capturedPieces.white).toHaveLength(0);
-    // King should be at g1, not at castled position
+    // Rook must still be at h1 — castling was NOT triggered during replay.
     expect(tempEng.board[7][6]).toMatchObject({ type: "king", color: "white" });
-    // Rook should be gone (captured, not moved to f1 via castling)
+    expect(tempEng.board[7][7]).toMatchObject({ type: "rook", color: "white" });
     expect(tempEng.board[7][5]).toBeNull();
+    expect(tempEng.capturedPieces.white).toHaveLength(0);
+    expect(tempEng.capturedPieces.black).toHaveLength(0);
   });
 
   it("deserialize copies capturedPieces arrays to prevent aliasing", () => {
