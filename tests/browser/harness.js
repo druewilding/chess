@@ -523,6 +523,71 @@ export class TwoPlayerGame {
     await page.waitForTimeout(500);
   }
 
+  // ── Game actions ───────────────────────────────────────────────────
+
+  /**
+   * Resign on a player's page. Handles the window.confirm dialog automatically.
+   * Waits for the game-over overlay to appear.
+   * @param {string} color — "white" or "black"
+   */
+  async resign(color) {
+    const page = this.pages[color];
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.click("#btn-resign");
+    await page.waitForFunction(() => !document.getElementById("game-over-overlay").hidden, { timeout: 5_000 });
+    return this;
+  }
+
+  /**
+   * Offer a draw on a player's page.
+   * @param {string} color — "white" or "black"
+   */
+  async offerDraw(color) {
+    const page = this.pages[color];
+    await page.click("#btn-draw");
+    return this;
+  }
+
+  /**
+   * Accept a draw offer on a player's page.
+   * Waits for the draw-offer banner to be visible first, then clicks Accept.
+   * Waits for the game-over overlay to appear on that page.
+   * @param {string} color — "white" or "black"
+   */
+  async acceptDraw(color) {
+    const page = this.pages[color];
+    await page.waitForFunction(() => !document.getElementById("draw-offer-banner").hidden, { timeout: 8_000 });
+    await page.click("#btn-accept-draw");
+    await page.waitForFunction(() => !document.getElementById("game-over-overlay").hidden, { timeout: 8_000 });
+    return this;
+  }
+
+  // ── Dark Chess assertions ──────────────────────────────────────────
+
+  /**
+   * Assert that no squares on a player's board are dark-shrouded (board is fully revealed).
+   * @param {string} color — "white" or "black"
+   */
+  async assertBoardRevealed(color) {
+    const page = this.pages[color];
+    const count = await page.evaluate(() => document.querySelectorAll("#chess-board .dark-shrouded").length);
+    expect(count, `${color} board should be fully revealed (no dark-shrouded squares)`).toBe(0);
+    return this;
+  }
+
+  /**
+   * Assert that no move-list entries are hidden with the dark-hidden class.
+   * @param {string} color — "white" or "black"
+   */
+  async assertMoveNotationRevealed(color) {
+    const page = this.pages[color];
+    const count = await page.evaluate(
+      () => document.querySelectorAll(".move-notation--dark-hidden").length
+    );
+    expect(count, `${color} move notation should have no hidden entries`).toBe(0);
+    return this;
+  }
+
   // ── Cleanup ────────────────────────────────────────────────────────
 
   async close() {
