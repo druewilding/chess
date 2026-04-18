@@ -60,26 +60,7 @@ describe("Risky Chess", () => {
   });
 
   it("knight captures king", () => {
-    // Knight on d3 (rank 5, file 3) can reach: c5,e5,b4,f4,b2,f2,c1,e1
-    // Not d6. Use the working position test below instead.
-    chessFromPosition("......../......../...k..../......../......../...N..../......../....K...", {
-      variant: "risky",
-    }).assertNotGameOver(); // knight can't reach d6 from d3
-  });
-
-  it("knight captures king (from correct square)", () => {
-    // Knight on f4 can reach e6, d5, d3, c3, c5, g6, h5, h3, g2
-    // Knight on f4 (rank 4, file 5), king on d5 (rank 3, file 3)
-    // d5 = rank3,file3. f4 = rank4,file5. dr=1,df=2 → valid knight move.
-    chessFromPosition("......../......../......../...k..../......../......../......../....KN..", {
-      variant: "risky",
-    })
-      // Hmm, knight on f1. f1 can reach e3, d2, g3, h2. Not d5.
-      // Let me place knight more strategically.
-      .assertNotGameOver();
-  });
-
-  it("knight captures king (working position)", () => {
+    // Knight on f4 (rank 4, file 5) can reach d5 (rank 3, file 3): dr=1, df=2 → valid knight move.
     chessFromPosition("......../......../......../...k..../.....N../......../......../....K...", {
       variant: "risky",
     })
