@@ -894,17 +894,18 @@ export class ChessEngine {
         blackScore = 0;
       for (const t of this.capturedPieces.white) whiteScore += pv[t] || 0;
       for (const t of this.capturedPieces.black) blackScore += pv[t] || 0;
+      const diff = Math.abs(whiteScore - blackScore);
       if (whiteScore > blackScore) {
         this.result = "white";
-        this.resultReason = `king captured — White ${whiteScore}, Black ${blackScore}`;
+        this.resultReason = `king captured — ${diff} points ahead`;
       } else if (blackScore > whiteScore) {
         this.result = "black";
-        this.resultReason = `king captured — White ${whiteScore}, Black ${blackScore}`;
+        this.resultReason = `king captured — ${diff} points ahead`;
       } else {
         if (RISKY_TIE_IS_DRAW) {
           moveData.draw = true;
           this.result = "draw";
-          this.resultReason = `king captured — tied at ${whiteScore}`;
+          this.resultReason = `king captured — tied on points`;
         } else {
           this.result = piece.color;
           this.resultReason = `king captured — tiebreaker`;

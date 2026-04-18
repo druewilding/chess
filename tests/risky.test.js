@@ -37,7 +37,7 @@ describe("Risky Chess", () => {
   it("queen captures the opponent's king — game ends", () => {
     chessFromPosition("...k..../......../......../......../......../......../......../...QK...", { variant: "risky" })
       .play("Qxd8#")
-      .assertGameOver("white", "king captured — White 12, Black 0")
+      .assertGameOver("white", "king captured — 12 points ahead")
       .assertCaptures({ white: ["king"], black: [] });
   });
 
@@ -47,7 +47,7 @@ describe("Risky Chess", () => {
       turn: "black",
     })
       .play("Qxd1#")
-      .assertGameOver("black", "king captured — White 0, Black 12")
+      .assertGameOver("black", "king captured — 12 points ahead")
       .assertCaptures({ white: [], black: ["king"] });
   });
 
@@ -56,7 +56,7 @@ describe("Risky Chess", () => {
       variant: "risky",
     })
       .play("dxc5#")
-      .assertGameOver("white", "king captured — White 12, Black 0");
+      .assertGameOver("white", "king captured — 12 points ahead");
   });
 
   it("knight captures king", () => {
@@ -85,7 +85,7 @@ describe("Risky Chess", () => {
       variant: "risky",
     })
       .play("Nxd5#")
-      .assertGameOver("white", "king captured — White 12, Black 0");
+      .assertGameOver("white", "king captured — 12 points ahead");
   });
 
   it("rook captures king along file", () => {
@@ -93,7 +93,7 @@ describe("Risky Chess", () => {
       variant: "risky",
     })
       .play("Rxd8#")
-      .assertGameOver("white", "king captured — White 12, Black 0");
+      .assertGameOver("white", "king captured — 12 points ahead");
   });
 
   it("bishop captures king on diagonal", () => {
@@ -103,7 +103,7 @@ describe("Risky Chess", () => {
       variant: "risky",
     })
       .play("Bxe5#")
-      .assertGameOver("white", "king captured — White 12, Black 0");
+      .assertGameOver("white", "king captured — 12 points ahead");
   });
 
   // ── Point-based scoring ────────────────────────────────────────────
@@ -152,7 +152,7 @@ describe("Risky Chess", () => {
       .play("Qxe1#") // black captures white king (12 pts)
       .assertCaptures({ white: ["rook"], black: ["queen", "king"] })
       // Black: queen(9) + king(12) = 21. White: rook(5). Black wins!
-      .assertGameOver("black", "king captured — White 5, Black 21");
+      .assertGameOver("black", "king captured — 16 points ahead");
   });
 
   // ── King can move into 'check' ────────────────────────────────────
@@ -309,7 +309,7 @@ describe("Risky Chess", () => {
       .assertPreviewCaptures({ white: ["king"], black: [] })
       .commitPreview()
       .assertCaptures({ white: ["king"], black: [] })
-      .assertGameOver("white", "king captured — White 12, Black 0");
+      .assertGameOver("white", "king captured — 12 points ahead");
   });
 
   it("non-king capture preview works normally", () => {
