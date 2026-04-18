@@ -190,6 +190,47 @@ export class ChessEngine {
     return false;
   }
 
+  // Risky Chess: only K vs K is truly dead — any other material can still lead to king capture.
+  hasOnlyKings() {
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        const p = this.board[r][f];
+        if (p && p.type !== "king") return false;
+      }
+    }
+    return true;
+  }
+
+  // Risky Chess: resolve a rule-based ending (50-move, repetition) by comparing
+  // board material. The side with more remaining material wins; equal = draw.
+  _resolveRiskyBoardPoints(moveData, reason) {
+    const pv = { pawn: 1, knight: 3, bishop: 3, rook: 5, queen: 9, amazon: 13, king: 12 };
+    let whiteScore = 0,
+      blackScore = 0;
+    for (let r = 0; r < 8; r++) {
+      for (let f = 0; f < 8; f++) {
+        const p = this.board[r][f];
+        if (p) {
+          if (p.color === "white") whiteScore += pv[p.type] || 0;
+          else blackScore += pv[p.type] || 0;
+        }
+      }
+    }
+    const diff = Math.abs(whiteScore - blackScore);
+    if (whiteScore > blackScore) {
+      this.result = "white";
+      this.resultReason = `${reason} — ${diff} points ahead`;
+    } else if (blackScore > whiteScore) {
+      this.result = "black";
+      this.resultReason = `${reason} — ${diff} points ahead`;
+    } else {
+      moveData.draw = true;
+      this.result = "draw";
+      this.resultReason = `${reason} — tied on points`;
+    }
+    moveData.ruleEnding = true;
+  }
+
   getPiece(rank, file) {
     if (rank < 0 || rank > 7 || file < 0 || file > 7) return undefined;
     return this.board[rank][file];
@@ -935,22 +976,32 @@ export class ChessEngine {
 
     // 50-move rule
     if (!this.gameOver && this.halfMoveClock >= 100) {
-      moveData.draw = true;
       this.gameOver = true;
-      this.result = "draw";
-      this.resultReason = "fifty-move rule";
+      if (this.risky) {
+        this._resolveRiskyBoardPoints(moveData, "fifty-move rule");
+      } else {
+        moveData.draw = true;
+        this.result = "draw";
+        this.resultReason = "fifty-move rule";
+      }
     }
 
     // Threefold repetition
     if (!this.gameOver && this.recordPosition() >= 3) {
-      moveData.draw = true;
       this.gameOver = true;
-      this.result = "draw";
-      this.resultReason = "repetition";
+      if (this.risky) {
+        this._resolveRiskyBoardPoints(moveData, "repetition");
+      } else {
+        moveData.draw = true;
+        this.result = "draw";
+        this.resultReason = "repetition";
+      }
     }
 
-    // Insufficient material (skip in Risky Chess — kings can capture kings)
-    if (!this.gameOver && !this.risky && this.hasInsufficientMaterial()) {
+    // Insufficient material
+    // Risky Chess: only K vs K is dead — any other material can still lead to king capture.
+    // Standard: K vs K, K+minor vs K, K+B vs K+B (same colour bishops).
+    if (!this.gameOver && (this.risky ? this.hasOnlyKings() : this.hasInsufficientMaterial())) {
       moveData.draw = true;
       this.gameOver = true;
       this.result = "draw";
@@ -1106,7 +1157,7 @@ export class ChessEngine {
       let notation = moveData.castling === "king" ? "O-O" : "O-O-O";
       if (moveData.checkmate) notation += "#";
       else if (moveData.check) notation += "+";
-      else if (moveData.stalemate || moveData.draw) notation += "$";
+      else if (moveData.stalemate || moveData.draw || moveData.ruleEnding) notation += "$";
       return notation;
     }
 
@@ -1138,7 +1189,7 @@ export class ChessEngine {
     if (moveData.kingCaptureLoss) notation += "@";
     else if (moveData.checkmate || (moveData.kingCapture && !moveData.draw)) notation += "#";
     else if (moveData.check) notation += "+";
-    else if (moveData.stalemate || moveData.draw) notation += "$";
+    else if (moveData.stalemate || moveData.draw || moveData.ruleEnding) notation += "$";
 
     return notation;
   }

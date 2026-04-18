@@ -63,22 +63,24 @@ When a pawn promotes: the opponent gains a pawn in their `capturedPieces` list (
 
 ### Risky Chess — no check/pin/stalemate logic
 
-When `this.risky` is true, the engine skips all check-related logic: `getLegalMoves()` does not filter out moves that leave the king in check (the `wouldBeInCheck` filter is bypassed), knights and sliding pieces are allowed to capture enemy kings (`!this.risky` guards), `canCastle()` skips the "king passes through check" validation, and `makeMove()` skips the check/checkmate/stalemate block and the insufficient-material check entirely. The king capture game-over logic is a separate block in `makeMove()` that runs before the check/stalemate block: it detects that a king was captured, computes both sides' material totals, and sets `result` based on the score comparison (or draw if tied and `RISKY_TIE_IS_DRAW` is true). The `moveData.kingCapture` flag is set so the UI and notation can recognise it. Notation uses `#` for a winning king capture, `@` for a losing king capture, and `$` for a drawn one.
+When `this.risky` is true, the engine skips all check-related logic: `getLegalMoves()` does not filter out moves that leave the king in check (the `wouldBeInCheck` filter is bypassed), knights and sliding pieces are allowed to capture enemy kings (`!this.risky` guards), `canCastle()` skips the "king passes through check" validation, and `makeMove()` skips the check/checkmate/stalemate block entirely. The king capture game-over logic is a separate block in `makeMove()` that runs before the check/stalemate block: it detects that a king was captured, computes both sides' material totals, and sets `result` based on the score comparison (or draw if tied and `RISKY_TIE_IS_DRAW` is true). The `moveData.kingCapture` flag is set so the UI and notation can recognise it. Notation uses `#` for a winning king capture, `@` for a losing king capture, and `$` for a drawn one.
 
 ### Draw detection
 
 Four automatic draw conditions are checked at the end of `makeMove()`, in this order:
 
-- **50-move rule** — `halfMoveClock` increments on every non-pawn, non-capture move and resets to 0 on a pawn move or capture. When it reaches 100 (50 full moves), the game ends as a draw with `resultReason: 'fifty-move rule'`.
-- **Threefold repetition** — `positionHistory` maps a compact position hash (active color + all 64 squares + castling rights + en passant file) to a count. `recordPosition()` increments the count and returns it; when it hits 3, the game ends as a draw with `resultReason: 'repetition'`. Both are serialised and restored so repetition tracking survives page reloads and Firebase sync.
-- **Insufficient material** — `hasInsufficientMaterial()` scans the board after every move and returns true for K-K, K+B-K, K+N-K, and K+B-K+B with both bishops on the same square colour. Results in `resultReason: 'insufficient material'`. K+N-K+N is intentionally excluded (a helpmate is theoretically possible). This check runs last among the automatic draws, guarded by `!this.gameOver`.
+- **50-move rule** — `halfMoveClock` increments on every non-pawn, non-capture move and resets to 0 on a pawn move or capture. When it reaches 100 (50 full moves), the game ends with `resultReason` containing `'fifty-move rule'`. In Risky Chess, this is resolved by board material via `_resolveRiskyBoardPoints()` — the side with more remaining material wins; equal material = draw (reason includes `'— X points ahead'` or `'— tied on points'`). In standard variants, it is always a draw.
+- **Threefold repetition** — `positionHistory` maps a compact position hash (active color + all 64 squares + castling rights + en passant file) to a count. `recordPosition()` increments the count and returns it; when it hits 3, the game ends. In Risky Chess, resolved by board material (same as 50-move). In standard variants, always a draw with `resultReason: 'repetition'`. Both are serialised and restored so repetition tracking survives page reloads and Firebase sync.
+- **Insufficient material** — In standard variants, `hasInsufficientMaterial()` scans the board and returns true for K-K, K+B-K, K+N-K, and K+B-K+B with both bishops on the same square colour. K+N-K+N is intentionally excluded (a helpmate is theoretically possible). In Risky Chess, only K-K is truly dead (checked by `hasOnlyKings()`); any other material can still lead to king capture, so the game continues. Results in `resultReason: 'insufficient material'`. This check runs last among the automatic draws, guarded by `!this.gameOver`.
+
+The `_resolveRiskyBoardPoints(moveData, reason)` helper computes remaining board material for both sides (using the same piece values as king capture: K=12, Q=9, R=5, B/N=3, P=1, A=13) and sets the result accordingly. It sets `moveData.ruleEnding = true` so the notation suffix `$` is applied regardless of whether it's a draw or a win.
 
 ### Move notation
 
 `getMoveNotation()` produces standard algebraic notation with custom suffixes:
 
 - `*` — friendly capture (Angry Chess)
-- `$` — move ends the game as a draw: stalemate (`moveData.stalemate`), or one of the three rule-based draws — fifty-move rule, threefold repetition, insufficient material (`moveData.draw`), or drawn king capture in Risky Chess
+- `$` — move ends the game by rule: stalemate (`moveData.stalemate`), rule-based draws (`moveData.draw`), drawn king capture in Risky Chess, or Risky Chess rule-based endings resolved by board material (`moveData.ruleEnding`) — covers both draws and wins
 - `@` — king capture where the capturer _loses_ on points (Risky Chess)
 - `+` — check, `#` — checkmate (standard), or winning king capture (Risky Chess)
 - `=Q` etc — promotion piece

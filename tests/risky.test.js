@@ -242,22 +242,109 @@ describe("Risky Chess", () => {
       .assertNotGameOver();
   });
 
-  it("50-move rule still applies", () => {
+  it("50-move rule — winner by board material", () => {
+    // White has K+N (15 pts), black has K (12 pts). White wins by 3.
     chessFromPosition("...k..../......../......../......../......../......../......../...NK...", {
       variant: "risky",
       halfMoveClock: 99,
     })
       .play("Nc3")
-      .assertGameOver("draw", "fifty-move rule");
+      .assertGameOver("white", "fifty-move rule \u2014 3 points ahead");
   });
 
-  it("threefold repetition draws in risky chess", () => {
+  it("50-move rule — draw when board material is equal", () => {
+    // K vs K: both 12 pts → draw.
+    chessFromPosition("...k..../......../......../......../......../......../......../....K...", {
+      variant: "risky",
+      halfMoveClock: 99,
+      turn: "black",
+    })
+      .play("Ke7")
+      .assertGameOver("draw", "fifty-move rule \u2014 tied on points");
+  });
+
+  it("50-move rule — notation uses $ for risky win", () => {
+    chessFromPosition("...k..../......../......../......../......../......../......../...NK...", {
+      variant: "risky",
+      halfMoveClock: 99,
+    })
+      .play("Nc3$")
+      .assertLastMoves("Nc3$");
+  });
+
+  it("50-move rule — notation uses $ for risky draw", () => {
+    chessFromPosition("...k..../......../......../......../......../......../......../....K...", {
+      variant: "risky",
+      halfMoveClock: 99,
+      turn: "black",
+    })
+      .play("Ke7$")
+      .assertLastMoves("Ke7$");
+  });
+
+  it("threefold repetition — winner by board material", () => {
+    // White has K+N (15 pts), black has K (12 pts). White wins by 3.
     chessFromPosition("...k..../......../......../......../......../......../......../...NK...", {
       variant: "risky",
     })
       .play("Nc3", "Kc7", "Nd1", "Kd8") // back to start → 2nd occurrence
-      .play("Nc3", "Kc7", "Nd1", "Kd8") // back to start → 3rd occurrence → draw
-      .assertGameOver("draw", "repetition");
+      .play("Nc3", "Kc7", "Nd1", "Kd8") // back to start → 3rd occurrence
+      .assertGameOver("white", "repetition \u2014 3 points ahead");
+  });
+
+  it("threefold repetition — draw when board material is equal", () => {
+    // K+N vs K+N: both 15 pts → draw on repetition.
+    chessFromPosition("...k..n./......../......../......../......../......../......../..N.K...", {
+      variant: "risky",
+    })
+      .play("Nb3", "Nf6", "Nc1", "Ng8") // back to start → 2nd
+      .play("Nb3", "Nf6", "Nc1", "Ng8") // back to start → 3rd → draw
+      .assertGameOver("draw", "repetition \u2014 tied on points");
+  });
+
+  it("threefold repetition — notation uses $ for risky result", () => {
+    chessFromPosition("...k..../......../......../......../......../......../......../...NK...", {
+      variant: "risky",
+    })
+      .play("Nc3", "Kc7", "Nd1", "Kd8")
+      .play("Nc3", "Kc7", "Nd1", "Kd8$")
+      .assertLastMoves("Kd8$");
+  });
+
+  // ── Insufficient material ──────────────────────────────────────────
+
+  it("K vs K is insufficient material in risky chess", () => {
+    chessFromPosition("...k..../......../......../......../......../......../......../....K...", {
+      variant: "risky",
+    })
+      .play("Kd1")
+      .assertGameOver("draw", "insufficient material");
+  });
+
+  it("K vs K triggers after last piece captured", () => {
+    // Black captures the bishop → only kings remain.
+    chessFromPosition("......../......../......../......../...B..../..k...../......../....K...", {
+      variant: "risky",
+      turn: "black",
+    })
+      .play("Kxd4")
+      .assertGameOver("draw", "insufficient material");
+  });
+
+  it("K+B vs K does NOT trigger insufficient material in risky", () => {
+    chessFromPosition("...k..../......../......../......../......../......../......../...BK...", {
+      variant: "risky",
+    })
+      .play("Ba4")
+      .assertNotGameOver();
+  });
+
+  it("K+N vs K does NOT trigger insufficient material in risky", () => {
+    chessFromPosition("...k..../......../......../......../......../......../......../...NK...", {
+      variant: "risky",
+    })
+      .play("Nc3")
+      .assertNotGameOver();
   });
 
   // ── History navigation ────────────────────────────────────────────
