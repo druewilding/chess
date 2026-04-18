@@ -250,6 +250,7 @@ class ChessTestGame {
         angry: this.engine.angry,
         dark: this.engine.dark,
         superchess: this.engine.superchess,
+        risky: this.engine.risky,
       });
       tmp.deserialize(JSON.parse(JSON.stringify(snap)));
       return tmp;
@@ -579,7 +580,7 @@ class ChessTestGame {
 /**
  * Create a new test game.
  *
- * @param {'standard'|'iceskate'|'angry'|'dark'|'superchess'} variant
+ * @param {'standard'|'iceskate'|'angry'|'dark'|'superchess'|'risky'} variant
  * @param {object} [options]
  * @param {boolean} [options.chess960] - Use randomised back rank
  * @param {number[]} [options.backRank960] - Specific 960 back rank (array of piece type strings)
@@ -597,6 +598,9 @@ export function chess(variant = "standard", options = {}) {
       break;
     case "dark":
       engineOpts.dark = true;
+      break;
+    case "risky":
+      engineOpts.risky = true;
       break;
     case "superchess":
       // superchess isn't a constructor option — set after creation
@@ -633,6 +637,7 @@ export function chessFromPosition(fen, opts = {}) {
   if (variant === "iceskate") engineOpts.iceskate = true;
   if (variant === "angry") engineOpts.angry = true;
   if (variant === "dark") engineOpts.dark = true;
+  if (variant === "risky") engineOpts.risky = true;
 
   const engine = new ChessEngine(engineOpts);
   if (variant === "superchess") engine.superchess = true;
@@ -687,10 +692,8 @@ export function chessFromPosition(fen, opts = {}) {
   engine.resultReason = null;
   engine.halfMoveClock = opts.halfMoveClock || 0;
   engine.fullMoveNumber = opts.fullMoveNumber || 1;
-  engine.positionHistory = {};
-  engine.recordPosition();
 
-  // Castling rights
+  // Castling rights — set BEFORE recording the initial position hash
   if (opts.castling !== undefined) {
     engine.castlingRights = opts.castling;
   } else {
@@ -706,6 +709,10 @@ export function chessFromPosition(fen, opts = {}) {
     const { rank, file } = sq(opts.enPassant);
     engine.enPassantTarget = { rank, file };
   }
+
+  // Record initial position AFTER all state (castling, en passant) is finalised
+  engine.positionHistory = {};
+  engine.recordPosition();
 
   return new ChessTestGame(engine);
 }

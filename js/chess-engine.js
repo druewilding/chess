@@ -25,6 +25,10 @@ export class ChessEngine {
     // Superchess: pawns may promote to an Amazon (queen + knight combo piece).
     this.superchess = options.superchess || false;
 
+    // Risky Chess: no check/checkmate — kings can be captured like any other piece.
+    // Game ends when a king is taken; winner determined by total capture points.
+    this.risky = options.risky || false;
+
     this.reset();
   }
 
@@ -198,10 +202,13 @@ export class ChessEngine {
 
     const pseudoMoves = this.getPseudoLegalMoves(rank, file, piece);
 
-    // Filter out moves that leave the king in check
-    let legalMoves = pseudoMoves.filter((move) => {
-      return !this.wouldBeInCheck(rank, file, move.rank, move.file, piece.color, move);
-    });
+    // Filter out moves that leave the king in check.
+    // Risky Chess: no check — any move is allowed, even exposing your own king.
+    let legalMoves = this.risky
+      ? pseudoMoves
+      : pseudoMoves.filter((move) => {
+          return !this.wouldBeInCheck(rank, file, move.rank, move.file, piece.color, move);
+        });
 
     // Ice Skate: sliding pieces must go to the end of their path.
     // Exception: when the king is already in check, stopping at an intermediate
@@ -370,7 +377,7 @@ export class ChessEngine {
       const f = file + df;
       if (r < 0 || r > 7 || f < 0 || f > 7) continue;
       const target = this.board[r][f];
-      if (target && target.type === "king") continue; // Never capture king
+      if (target && target.type === "king" && !this.risky) continue; // Never capture king (unless risky)
       if (!target || target.color !== color) {
         moves.push({ rank: r, file: f });
       } else if (this.angry && target.color === color && target.type !== "king") {
@@ -424,7 +431,7 @@ export class ChessEngine {
         if (r < 0 || r > 7 || f < 0 || f > 7) break;
 
         const target = this.board[r][f];
-        if (target && target.type === "king") break; // Never capture king, never move past king
+        if (target && target.type === "king" && !this.risky) break; // Never capture king (unless risky)
         if (!target) {
           moves.push({ rank: r, file: f });
         } else {
@@ -470,7 +477,8 @@ export class ChessEngine {
     const rights = this.castlingRights[color];
     const baseRank = color === "white" ? 7 : 0;
 
-    if (rank === baseRank && !this.isSquareAttacked(rank, file, color)) {
+    // Risky Chess: no check concept, so castling is always allowed (no attacked-square checks)
+    if (rank === baseRank && (this.risky || !this.isSquareAttacked(rank, file, color))) {
       // Kingside
       if (rights.king) {
         if (this.canCastle(color, "king")) {
@@ -512,10 +520,13 @@ export class ChessEngine {
     }
 
     // Check king doesn't pass through or land on attacked square
-    const kingTravel = this.getSquaresBetween(kingFile, kingDest);
-    kingTravel.push(kingDest);
-    for (const f of kingTravel) {
-      if (this.isSquareAttacked(baseRank, f, color)) return false;
+    // Risky Chess: skip this check — no check concept
+    if (!this.risky) {
+      const kingTravel = this.getSquaresBetween(kingFile, kingDest);
+      kingTravel.push(kingDest);
+      for (const f of kingTravel) {
+        if (this.isSquareAttacked(baseRank, f, color)) return false;
+      }
     }
 
     return true;
@@ -711,7 +722,7 @@ export class ChessEngine {
   // permanently modifying game state. Used for move-preview indicators.
   previewMoveResult(fromRank, fromFile, toRank, toFile, promotion = null, castling = undefined) {
     const piece = this.board[fromRank][fromFile];
-    if (!piece) return { check: false, checkmate: false, stalemate: false, draw: false };
+    if (!piece) return { check: false, checkmate: false, stalemate: false, draw: false, kingCapture: false };
 
     // Deep-copy the entire engine state, apply the move for real, read the result
     // flags (check/checkmate/stalemate/draw), then restore. This avoids brittle
@@ -720,12 +731,13 @@ export class ChessEngine {
     const moveData = this.makeMove(fromRank, fromFile, toRank, toFile, promotion, castling);
     this.deserialize(savedState);
 
-    if (!moveData) return { check: false, checkmate: false, stalemate: false, draw: false };
+    if (!moveData) return { check: false, checkmate: false, stalemate: false, draw: false, kingCapture: false };
     return {
       check: !!moveData.check,
       checkmate: !!moveData.checkmate,
       stalemate: !!moveData.stalemate,
       draw: !!moveData.draw,
+      kingCapture: !!moveData.kingCapture,
     };
   }
 
@@ -871,24 +883,55 @@ export class ChessEngine {
     if (this.turn === "black") this.fullMoveNumber++;
     this.turn = this.turn === "white" ? "black" : "white";
 
-    // Check for check/checkmate/stalemate
-    if (this.isInCheck(this.turn)) {
-      moveData.check = true;
-      if (!this.hasLegalMoves(this.turn)) {
-        moveData.checkmate = true;
-        this.gameOver = true;
-        this.result = piece.color;
-        this.resultReason = "checkmate";
-      }
-    } else if (!this.hasLegalMoves(this.turn)) {
-      moveData.stalemate = true;
+    // Risky Chess: king capture ends the game — winner by total capture points
+    if (this.risky && moveData.captured && moveData.captured.type === "king") {
+      moveData.kingCapture = true;
       this.gameOver = true;
-      this.result = "draw";
-      this.resultReason = "stalemate";
+      const RISKY_KING_VALUE = 12;
+      const RISKY_TIE_IS_DRAW = true;
+      const pv = { pawn: 1, knight: 3, bishop: 3, rook: 5, queen: 9, amazon: 13, king: RISKY_KING_VALUE };
+      let whiteScore = 0,
+        blackScore = 0;
+      for (const t of this.capturedPieces.white) whiteScore += pv[t] || 0;
+      for (const t of this.capturedPieces.black) blackScore += pv[t] || 0;
+      if (whiteScore > blackScore) {
+        this.result = "white";
+        this.resultReason = `king captured — White ${whiteScore}, Black ${blackScore}`;
+      } else if (blackScore > whiteScore) {
+        this.result = "black";
+        this.resultReason = `king captured — White ${whiteScore}, Black ${blackScore}`;
+      } else {
+        if (RISKY_TIE_IS_DRAW) {
+          moveData.draw = true;
+          this.result = "draw";
+          this.resultReason = `king captured — tied at ${whiteScore}`;
+        } else {
+          this.result = piece.color;
+          this.resultReason = `king captured — tiebreaker`;
+        }
+      }
+    }
+
+    // Check for check/checkmate/stalemate (skip in Risky Chess — no check concept)
+    if (!this.risky) {
+      if (this.isInCheck(this.turn)) {
+        moveData.check = true;
+        if (!this.hasLegalMoves(this.turn)) {
+          moveData.checkmate = true;
+          this.gameOver = true;
+          this.result = piece.color;
+          this.resultReason = "checkmate";
+        }
+      } else if (!this.hasLegalMoves(this.turn)) {
+        moveData.stalemate = true;
+        this.gameOver = true;
+        this.result = "draw";
+        this.resultReason = "stalemate";
+      }
     }
 
     // 50-move rule
-    if (this.halfMoveClock >= 100) {
+    if (!this.gameOver && this.halfMoveClock >= 100) {
       moveData.draw = true;
       this.gameOver = true;
       this.result = "draw";
@@ -903,8 +946,8 @@ export class ChessEngine {
       this.resultReason = "repetition";
     }
 
-    // Insufficient material
-    if (!this.gameOver && this.hasInsufficientMaterial()) {
+    // Insufficient material (skip in Risky Chess — kings can capture kings)
+    if (!this.gameOver && !this.risky && this.hasInsufficientMaterial()) {
       moveData.draw = true;
       this.gameOver = true;
       this.result = "draw";
@@ -934,6 +977,7 @@ export class ChessEngine {
       angry: this.angry,
       dark: this.dark,
       superchess: this.superchess,
+      risky: this.risky,
       positionHistory: this.positionHistory,
       startingBoard: this.startingBoard,
       initialKingFile: this.initialKingFile ?? null,
@@ -981,6 +1025,7 @@ export class ChessEngine {
     this.angry = state.angry || false;
     this.dark = state.dark || false;
     this.superchess = state.superchess || false;
+    this.risky = state.risky || false;
     this.positionHistory = state.positionHistory
       ? typeof state.positionHistory === "object"
         ? { ...state.positionHistory }
@@ -1087,7 +1132,7 @@ export class ChessEngine {
     }
 
     if (moveData.friendlyCapture) notation += "*";
-    if (moveData.checkmate) notation += "#";
+    if (moveData.checkmate || (moveData.kingCapture && !moveData.draw)) notation += "#";
     else if (moveData.check) notation += "+";
     else if (moveData.stalemate || moveData.draw) notation += "$";
 

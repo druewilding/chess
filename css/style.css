@@ -1235,6 +1235,25 @@ img.piece {
   color: #2aa75f;
 }
 
+/* ===== Risky Chess ===== */
+.btn-risky {
+  background: #3e2400 !important;
+  border: 1px solid #e67e22;
+}
+
+.btn-risky:hover {
+  background: #c96a1a !important;
+}
+
+.variant-label.variant-risky {
+  background: rgba(230, 126, 34, 0.15);
+  color: #e67e22;
+}
+
+.rules-panel-risky h3 {
+  color: #e67e22;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 600px) {
   .lobby-layout {

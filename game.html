@@ -96,6 +96,15 @@
           piece combining the abilities of both a queen and a knight, making it a formidable addition to your arsenal.
         </p>
       </div>
+      <div class="rules-panel rules-panel-risky" id="rules-risky" hidden>
+        <h3>Risky Chess Rules</h3>
+        <p>
+          Like regular chess, except there is <strong>no check or checkmate</strong>. You can threaten the opponent's
+          king, but they are free to ignore it. You can even move your own king into danger! The game ends when a king
+          is <strong>captured</strong> — but the capturer doesn't necessarily win. The winner is whoever has the
+          <strong>most points</strong> from captured pieces (K=12, Q=9, R=5, B/N=3, P=1).
+        </p>
+      </div>
 
       <!-- Draw offer banner -->
       <div id="draw-offer-banner" class="draw-offer-banner" hidden>
@@ -207,6 +216,7 @@
           angry: engine.angry,
           dark: engine.dark,
           superchess: engine.superchess,
+          risky: engine.risky,
         });
         // Use the engine's actual starting board so Chess960 positions are preserved.
         // engine.startingBoard is always set (standard or 960 layout).
@@ -370,9 +380,12 @@
         const isDark = engine.dark;
         const isAngry = engine.angry;
         const isSuperchess = engine.superchess;
+        const isRisky = engine.risky;
         const is960 = gameVariant.endsWith("-960");
         let label;
-        if (isDark) {
+        if (isRisky) {
+          label = is960 ? "Risky Chess960" : "Risky Chess";
+        } else if (isDark) {
           label = is960 ? "Dark Chess960" : "Dark Chess";
         } else if (isAngry) {
           label = is960 ? "Angry Chess960" : "Angry Chess";
@@ -385,21 +398,25 @@
         labelEl.textContent = label;
         if (isIceskate) {
           labelEl.classList.add("variant-iceskate");
-          labelEl.classList.remove("variant-dark", "variant-angry", "variant-superchess");
+          labelEl.classList.remove("variant-dark", "variant-angry", "variant-superchess", "variant-risky");
         } else if (isDark) {
           labelEl.classList.add("variant-dark");
-          labelEl.classList.remove("variant-iceskate", "variant-angry", "variant-superchess");
+          labelEl.classList.remove("variant-iceskate", "variant-angry", "variant-superchess", "variant-risky");
         } else if (isAngry) {
           labelEl.classList.add("variant-angry");
-          labelEl.classList.remove("variant-iceskate", "variant-dark", "variant-superchess");
+          labelEl.classList.remove("variant-iceskate", "variant-dark", "variant-superchess", "variant-risky");
         } else if (isSuperchess) {
           labelEl.classList.add("variant-superchess");
-          labelEl.classList.remove("variant-iceskate", "variant-dark", "variant-angry");
+          labelEl.classList.remove("variant-iceskate", "variant-dark", "variant-angry", "variant-risky");
+        } else if (isRisky) {
+          labelEl.classList.add("variant-risky");
+          labelEl.classList.remove("variant-iceskate", "variant-dark", "variant-angry", "variant-superchess");
         }
         document.getElementById("rules-iceskate").hidden = !isIceskate;
         document.getElementById("rules-angry").hidden = !isAngry;
         document.getElementById("rules-dark").hidden = !isDark;
         document.getElementById("rules-superchess").hidden = !isSuperchess;
+        document.getElementById("rules-risky").hidden = !isRisky;
         document.title = label;
       }
 
@@ -416,11 +433,13 @@
         const isAngry = variant === "angry" || variant === "angry-960";
         const isDark = variant === "dark" || variant === "dark-960";
         const isSuperchess = variant === "superchess" || variant === "superchess-960";
+        const isRisky = variant === "risky" || variant === "risky-960";
         const is960 = variant.endsWith("-960");
         engine.iceskate = isIceskate;
         engine.angry = isAngry;
         engine.dark = isDark;
         engine.superchess = isSuperchess;
+        engine.risky = isRisky;
         if (is960) {
           engine.setup960();
         } else {
@@ -473,7 +492,7 @@
         const BOT_RANDOM_RATE = 0.3;
 
         // Piece values for capture scoring
-        const PIECE_VALUES = { queen: 9, rook: 5, bishop: 3, knight: 3, pawn: 1, amazon: 13 };
+        const PIECE_VALUES = { queen: 9, rook: 5, bishop: 3, knight: 3, pawn: 1, amazon: 13, king: 12 };
 
         // Collect every legal move for the bot's pieces, scored by desirability:
         //   capture by piece rank: queen=9, rook=5, bishop/knight=3, pawn=1
@@ -528,6 +547,9 @@
               );
               if (preview.checkmate) score += 20;
               else if (preview.check) score += 10;
+
+              // Risky Chess: big bonus for capturing the opponent's king
+              if (preview.kingCapture) score += 20;
 
               // --- Opening / positional heuristics ---
 
@@ -1015,7 +1037,7 @@
           if (piece) {
             const capturedPiece = enPassant ? engine.getPiece(fromRank, toFile) : engine.getPiece(toRank, toFile);
             const isFriendlyCapture = capturedPiece && capturedPiece.color === piece.color;
-            const { check, checkmate, stalemate, draw } = engine.previewMoveResult(
+            const { check, checkmate, stalemate, draw, kingCapture } = engine.previewMoveResult(
               fromRank,
               fromFile,
               toRank,
@@ -1036,6 +1058,7 @@
               checkmate,
               stalemate,
               draw,
+              kingCapture,
               disambiguation: engine.computeDisambiguation(fromRank, fromFile, toRank, toFile, piece),
             };
             const pendingNotation = engine.getMoveNotation(pendingMoveData);
@@ -1097,7 +1120,7 @@
         if (ui.pendingMoveConfirm) {
           if (warningEl) warningEl.remove();
         } else {
-          const pieceValues = { pawn: 1, knight: 3, bishop: 3, rook: 5, queen: 9, amazon: 13 };
+          const pieceValues = { pawn: 1, knight: 3, bishop: 3, rook: 5, queen: 9, amazon: 13, king: 12 };
           let whiteBoard = 0,
             blackBoard = 0;
           for (let r = 0; r < 8; r++) {
