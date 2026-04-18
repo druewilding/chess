@@ -157,7 +157,7 @@ export class ChessUI {
       const { fromRank, fromFile, toRank, toFile, promotion, castling } = this.pendingMoveConfirm;
       const result = this.engine.previewMoveResult(fromRank, fromFile, toRank, toFile, promotion || null, castling);
       previewIsDraw = result.draw;
-      if (result.check || result.checkmate || result.stalemate) {
+      if (!this.engine.risky && (result.check || result.checkmate || result.stalemate)) {
         const movingPiece = this.engine.getPiece(fromRank, fromFile);
         if (movingPiece) {
           const opponent = movingPiece.color === "white" ? "black" : "white";
@@ -290,7 +290,8 @@ export class ChessUI {
 
         // Highlight king in check, checkmate, or stalemate
         // Suppress during pending move preview — any legal pending move resolves check
-        if (!this.pendingMoveConfirm && piece && piece.type === "king" && piece.color === this.engine.turn) {
+        // Suppress entirely in Risky Chess (no check concept)
+        if (!this.engine.risky && !this.pendingMoveConfirm && piece && piece.type === "king" && piece.color === this.engine.turn) {
           if (this.engine.gameOver && this.engine.resultReason === "checkmate") {
             square.classList.add("in-checkmate");
           } else if (this.engine.gameOver && this.engine.resultReason === "stalemate") {
