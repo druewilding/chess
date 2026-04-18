@@ -187,13 +187,19 @@ export class GameManager {
         });
       } catch (innerErr) {
         // Stale or invalid push subscription — unsubscribe and retry once.
-        const existingSub = await swReg.pushManager.getSubscription();
+        // Guard against environments where the Push API is unavailable (e.g. some iOS versions).
+        const existingSub = await swReg.pushManager?.getSubscription();
         if (existingSub) {
-          await existingSub.unsubscribe();
-          token = await getToken(messaging, {
-            vapidKey: firebaseConfig.vapidKey,
-            serviceWorkerRegistration: swReg,
-          });
+          try {
+            await existingSub.unsubscribe();
+            token = await getToken(messaging, {
+              vapidKey: firebaseConfig.vapidKey,
+              serviceWorkerRegistration: swReg,
+            });
+          } catch (retryErr) {
+            // Preserve the original getToken error as the cause for easier debugging.
+            throw new Error(`FCM retry failed: ${retryErr.message}`, { cause: innerErr });
+          }
         } else {
           throw innerErr;
         }
