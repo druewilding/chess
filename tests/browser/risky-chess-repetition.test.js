@@ -45,3 +45,46 @@ test.describe("Risky Chess — repetition decided by board material", () => {
     await game.assertGameOver("black", "You Lose", "by repetition — 1 points behind");
   });
 });
+
+test.describe("Risky Chess — repetition draw on equal board material", () => {
+  let game;
+
+  test.beforeAll(async ({ browser }) => {
+    game = await TwoPlayerGame.create(browser, "risky", "white");
+  });
+
+  test.afterAll(async () => {
+    await game?.close();
+  });
+
+  // 1. d4 e5  2. dxe5 f6  3. a4 fxe5  4. Ra3 h5  5. Rh3 Rh6
+  // 6. Ra3 Ra6  7. Rh3 Rh6  8. Ra3 Ra6  9. Rh3 Rh6$
+  //
+  // White captured e-pawn, black recaptured with f-pawn → each side lost 1 pawn,
+  // so board material is equal (50 pts each). Threefold repetition → draw.
+  test("draw when board material is tied on repetition", async () => {
+    await game.play(
+      "d4",
+      "e5",
+      "dxe5",
+      "f6",
+      "a4",
+      "fxe5",
+      "Ra3",
+      "h5",
+      "Rh3",
+      "Rh6",
+      "Ra3",
+      "Ra6",
+      "Rh3",
+      "Rh6",
+      "Ra3",
+      "Ra6",
+      "Rh3",
+      "Rh6$"
+    );
+
+    await game.assertGameOver("white", "Draw", "by repetition — tied on points");
+    await game.assertGameOver("black", "Draw", "by repetition — tied on points");
+  });
+});
