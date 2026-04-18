@@ -33,19 +33,10 @@ function sortPieces(arr) {
   return [...arr].sort((a, b) => PIECE_ORDER.indexOf(a) - PIECE_ORDER.indexOf(b));
 }
 
-// ── Square coordinate helpers ────────────────────────────────────────
-
-function algebraicToCoords(sq) {
-  const file = FILES.indexOf(sq[0]);
-  const rank = RANKS.indexOf(sq[1]);
-  if (file < 0 || rank < 0) throw new Error(`Bad square: "${sq}"`);
-  return { rank, file };
-}
-
 // ── Move‑notation parser (minimal, mirrors tests/parse-notation.js) ─
 
 function parseNotation(san) {
-  let s = san.replace(/[+#*$!?]+$/, "").trim();
+  let s = san.replace(/[+#*$@!?]+$/, "").trim();
 
   // Castling
   if (s === "O-O" || s === "0-0") return { castle: "king" };
@@ -161,8 +152,6 @@ export class TwoPlayerGame {
    * @returns {Promise<TwoPlayerGame>}
    */
   static async create(browser, variant, creatorColor = "white") {
-    const joinerColor = creatorColor === "white" ? "black" : "white";
-
     // ── Player 1: create the game ─────────────────────────────────
     const ctx1 = await browser.newContext();
     const p1 = await ctx1.newPage();
@@ -178,6 +167,8 @@ export class TwoPlayerGame {
       "dark-960": "btn-new-dark-960",
       superchess: "btn-new-superchess",
       "superchess-960": "btn-new-superchess-960",
+      risky: "btn-new-risky",
+      "risky-960": "btn-new-risky-960",
     };
     const btnId = variantButtonMap[variant];
     if (!btnId) throw new Error(`Unknown variant: "${variant}"`);
@@ -467,12 +458,16 @@ export class TwoPlayerGame {
   /**
    * Assert the game-over overlay is showing on a player's page.
    */
-  async assertGameOver(color, expectedTitle) {
+  async assertGameOver(color, expectedTitle, expectedReason) {
     const page = this.pages[color];
     await page.waitForFunction(() => !document.getElementById("game-over-overlay").hidden, { timeout: 5_000 });
     if (expectedTitle) {
       const title = await page.textContent("#game-over-title");
       expect(title.trim(), `${color} game-over title`).toBe(expectedTitle);
+    }
+    if (expectedReason) {
+      const reason = await page.textContent("#game-over-reason");
+      expect(reason.trim(), `${color} game-over reason`).toBe(expectedReason);
     }
     return this;
   }

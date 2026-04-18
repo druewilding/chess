@@ -22,6 +22,8 @@
               <button id="btn-new-960" class="btn btn-primary btn-iceskate">Ice Skate Chess960</button>
               <button id="btn-new-angry" class="btn btn-primary btn-angry">Angry Chess</button>
               <button id="btn-new-angry-960" class="btn btn-primary btn-angry">Angry Chess960</button>
+              <button id="btn-new-risky" class="btn btn-primary btn-risky">Risky Chess</button>
+              <button id="btn-new-risky-960" class="btn btn-primary btn-risky">Risky Chess960</button>
               <button id="btn-new-dark" class="btn btn-primary btn-dark">Dark Chess</button>
               <button id="btn-new-dark-960" class="btn btn-primary btn-dark">Dark Chess960</button>
               <button id="btn-new-superchess" class="btn btn-primary btn-superchess">Superchess</button>
@@ -69,6 +71,8 @@
               <button id="btn-bot-960" class="btn btn-primary btn-iceskate">Ice Skate Chess960</button>
               <button id="btn-bot-angry" class="btn btn-primary btn-angry">Angry Chess</button>
               <button id="btn-bot-angry-960" class="btn btn-primary btn-angry">Angry Chess960</button>
+              <button id="btn-bot-risky" class="btn btn-primary btn-risky">Risky Chess</button>
+              <button id="btn-bot-risky-960" class="btn btn-primary btn-risky">Risky Chess960</button>
               <button id="btn-bot-dark" class="btn btn-primary btn-dark">Dark Chess</button>
               <button id="btn-bot-dark-960" class="btn btn-primary btn-dark">Dark Chess960</button>
               <button id="btn-bot-superchess" class="btn btn-primary btn-superchess">Superchess</button>
@@ -137,6 +141,22 @@
                   also backfire spectacularly.
                 </p>
                 <img src="assets/images/angry-chess.png" alt="Angry Chess screenshot" class="variant-screenshot" />
+              </div>
+            </details>
+          </section>
+
+          <section class="rules-panel rules-panel-risky">
+            <details>
+              <summary><h3>How to Play Risky Chess</h3></summary>
+              <div>
+                <p>
+                  Like regular chess, except there is <strong>no check or checkmate</strong>. You can threaten the
+                  opponent's king, but they are free to ignore it. You can even move your own king into danger! The game
+                  ends when a king is <strong>captured</strong> — but the capturer doesn't necessarily win. The winner
+                  is whoever has the <strong>most points</strong> from captured pieces (king = 12 pts).
+                </p>
+                <p>This variant was made up by my sibling Luna.</p>
+                <img src="assets/images/risky-chess.png" alt="Risky Chess screenshot" class="variant-screenshot" />
               </div>
             </details>
           </section>
@@ -229,6 +249,8 @@
         "dark-960": "Dark Chess960",
         superchess: "Superchess",
         "superchess-960": "Superchess960",
+        risky: "Risky Chess",
+        "risky-960": "Risky Chess960",
       };
 
       const VARIANT_PANEL_MAP = {
@@ -240,6 +262,8 @@
         "dark-960": [".rules-panel-dark", ".rules-panel-960"],
         superchess: [".rules-panel-superchess"],
         "superchess-960": [".rules-panel-superchess", ".rules-panel-960"],
+        risky: [".rules-panel-risky"],
+        "risky-960": [".rules-panel-risky", ".rules-panel-960"],
       };
 
       function openRulesForVariant(variant) {
@@ -272,6 +296,8 @@
       document
         .getElementById("btn-new-superchess-960")
         .addEventListener("click", () => showColorPicker("superchess-960"));
+      document.getElementById("btn-new-risky").addEventListener("click", () => showColorPicker("risky"));
+      document.getElementById("btn-new-risky-960").addEventListener("click", () => showColorPicker("risky-960"));
 
       document.getElementById("btn-back-to-variants").addEventListener("click", () => {
         document.getElementById("color-picker").hidden = true;
@@ -289,10 +315,12 @@
           const isAngry = pendingVariant === "angry" || pendingVariant === "angry-960";
           const isDark = pendingVariant === "dark" || pendingVariant === "dark-960";
           const isSuperchess = pendingVariant === "superchess" || pendingVariant === "superchess-960";
+          const isRisky = pendingVariant === "risky" || pendingVariant === "risky-960";
           engine.iceskate = isIceskate;
           engine.angry = isAngry;
           engine.dark = isDark;
           engine.superchess = isSuperchess;
+          engine.risky = isRisky;
           if (pendingVariant.endsWith("-960")) {
             engine.setup960();
           } else {
@@ -355,6 +383,8 @@
       document
         .getElementById("btn-bot-superchess-960")
         .addEventListener("click", () => showBotColorPicker("superchess-960"));
+      document.getElementById("btn-bot-risky").addEventListener("click", () => showBotColorPicker("risky"));
+      document.getElementById("btn-bot-risky-960").addEventListener("click", () => showBotColorPicker("risky-960"));
 
       document.getElementById("btn-bot-back").addEventListener("click", () => {
         document.getElementById("bot-color-picker").hidden = true;

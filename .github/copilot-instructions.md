@@ -8,6 +8,7 @@ A vanilla JS progressive web app implementing chess variants with real-time mult
 - **Angry Chess** — Players can capture their own pieces (except king). Friendly captures are marked with `*` in notation and blue highlights in the UI.
 - **Dark Chess** — Standard chess rules, but the board is shrouded in darkness. Own pieces are always visible; enemy pieces are hidden. Selecting (tapping) a friendly piece "shines a torch", illuminating its legal move squares and revealing any enemy pieces there. The `dark` flag on the engine is purely informational (no rule changes); all hiding is handled by `ChessUI` via the `dark`, `playerColor`, and `darkRevealed` properties.
 - **Superchess** — Standard chess rules, but pawns can promote to an Amazon (queen+knight combo piece). The Amazon moves as either a queen or a knight, making it a powerful addition to the game. The Amazon's movement and notation are handled by treating it as a separate piece type in `chess-engine.js` and `chess-ui.js`.
+- **Risky Chess** — No check, checkmate, or stalemate. Kings can be captured like any other piece. The game ends immediately when a king is captured; the winner is determined by total material points (king = 12, queen = 9, rook = 5, bishop/knight = 3, pawn = 1, amazon = 13). Tied points = draw (controlled by `RISKY_TIE_IS_DRAW` constant in `makeMove`). Pieces can move into or remain in "check" freely; pins do not exist. Castling is permitted even when the king passes through or lands on attacked squares. 50-move rule and threefold repetition still apply. Orange UI theme (`#e67e22`).
 - **Chess960 (Fischer Random)** — Randomised back-rank setup. All variants above have a 960 mode.
 
 ## Architecture
@@ -60,21 +61,28 @@ When a pawn promotes: the opponent gains a pawn in their `capturedPieces` list (
 
 `getLegalMoves()` applies ice skate restrictions in two stages: first generate all pseudo-legal sliding moves, filter for legality (not leaving king in check), then restrict to `getIceskateEndpointSet()` — but **only when the king is not already in check**. When in check, the full set of legal intermediate squares is kept so the player can block. `getIceskateEndpointSet()` walks each direction to find the last reachable square (including stops on enemy pieces), building a `Set` of `"rank,file"` strings. Modifying sliding move generation or check detection without accounting for this two-phase filter will break the check-blocking exception.
 
+### Risky Chess — no check/pin/stalemate logic
+
+When `this.risky` is true, the engine skips all check-related logic: `getLegalMoves()` does not filter out moves that leave the king in check (the `wouldBeInCheck` filter is bypassed), knights and sliding pieces are allowed to capture enemy kings (`!this.risky` guards), `canCastle()` skips the "king passes through check" validation, and `makeMove()` skips the check/checkmate/stalemate block entirely. The king capture game-over logic is a separate block in `makeMove()` that runs before the check/stalemate block: it detects that a king was captured, computes both sides' material totals, and sets `result` based on the score comparison (or draw if tied and `RISKY_TIE_IS_DRAW` is true). The `moveData.kingCapture` flag is set so the UI and notation can recognise it. Notation uses `#` for a winning king capture, `@` for a losing king capture, and `$` for a drawn one.
+
 ### Draw detection
 
 Four automatic draw conditions are checked at the end of `makeMove()`, in this order:
 
-- **50-move rule** — `halfMoveClock` increments on every non-pawn, non-capture move and resets to 0 on a pawn move or capture. When it reaches 100 (50 full moves), the game ends as a draw with `resultReason: 'fifty-move rule'`.
-- **Threefold repetition** — `positionHistory` maps a compact position hash (active color + all 64 squares + castling rights + en passant file) to a count. `recordPosition()` increments the count and returns it; when it hits 3, the game ends as a draw with `resultReason: 'repetition'`. Both are serialised and restored so repetition tracking survives page reloads and Firebase sync.
-- **Insufficient material** — `hasInsufficientMaterial()` scans the board after every move and returns true for K-K, K+B-K, K+N-K, and K+B-K+B with both bishops on the same square colour. Results in `resultReason: 'insufficient material'`. K+N-K+N is intentionally excluded (a helpmate is theoretically possible). This check runs last among the automatic draws, guarded by `!this.gameOver`.
+- **50-move rule** — `halfMoveClock` increments on every non-pawn, non-capture move and resets to 0 on a pawn move or capture. When it reaches 100 (50 full moves), the game ends with `resultReason` containing `'fifty-move rule'`. In Risky Chess, this is resolved by board material via `_resolveRiskyBoardPoints()` — the side with more remaining material wins; equal material = draw (reason includes `'— X points ahead'` or `'— tied on points'`). In standard variants, it is always a draw.
+- **Threefold repetition** — `positionHistory` maps a compact position hash (active color + all 64 squares + castling rights + en passant file) to a count. `recordPosition()` increments the count and returns it; when it hits 3, the game ends. In Risky Chess, resolved by board material (same as 50-move). In standard variants, always a draw with `resultReason: 'repetition'`. Both are serialised and restored so repetition tracking survives page reloads and Firebase sync.
+- **Insufficient material** — In standard variants, `hasInsufficientMaterial()` scans the board and returns true for K-K, K+B-K, K+N-K, and K+B-K+B with both bishops on the same square colour. K+N-K+N is intentionally excluded (a helpmate is theoretically possible). In Risky Chess, only K-K is truly dead (checked by `hasOnlyKings()`); any other material can still lead to king capture, so the game continues. Results in `resultReason: 'insufficient material'`. This check runs last among the automatic draws, guarded by `!this.gameOver`.
+
+The `_resolveRiskyBoardPoints(moveData, reason)` helper computes remaining board material for both sides (using the same piece values as king capture: K=12, Q=9, R=5, B/N=3, P=1, A=13) and sets the result accordingly. It sets `moveData.ruleEnding = true` so the notation suffix `$` is applied regardless of whether it's a draw or a win.
 
 ### Move notation
 
 `getMoveNotation()` produces standard algebraic notation with custom suffixes:
 
 - `*` — friendly capture (Angry Chess)
-- `$` — move ends the game as a draw: stalemate (`moveData.stalemate`), or one of the three rule-based draws — fifty-move rule, threefold repetition, insufficient material (`moveData.draw`)
-- `+` — check, `#` — checkmate (standard)
+- `$` — move ends the game by rule: stalemate (`moveData.stalemate`), rule-based draws (`moveData.draw`), drawn king capture in Risky Chess, or Risky Chess rule-based endings resolved by board material (`moveData.ruleEnding`) — covers both draws and wins
+- `@` — king capture where the capturer _loses_ on points (Risky Chess)
+- `+` — check, `#` — checkmate (standard), or winning king capture (Risky Chess)
 - `=Q` etc — promotion piece
 
 Disambiguation (`Rae1`, `R1e3`, etc.) is computed by `computeDisambiguation()` **before** the move is applied. Critically, it **temporarily disables ice skate mode** while checking whether other same-type pieces could reach the same square — because ice skate restrictions don't exist in standard notation and would produce incorrect disambiguation strings.
@@ -96,6 +104,7 @@ Bot games are launched via hash `game.html#bot:variant:color`. The bot scores ev
 | Pawn two-square advance              | +1                                 |
 | Develops knight/bishop off back rank | +1/+2                              |
 | King move (non-castling)             | −3                                 |
+| King capture (Risky Chess)           | +20                                |
 
 After scoring, the bot **randomly ignores the scores 30% of the time** and picks any non-negative move at random instead. The other 70% it plays the highest-scoring move, breaking ties randomly. This makes it imperfect but unpredictable. In the random pool, moves with negative scores (e.g. pointless friendly captures) are excluded unless all moves are negative.
 
@@ -116,18 +125,19 @@ A GitHub Actions workflow (`.github/workflows/test.yml`) runs `npm test` automat
 
 `tests/harness.js` exports two helpers used by every test file:
 
-- **`setupGame(variant, options)`** — creates a `ChessEngine` and `ChessUI` pair pre-configured for the given variant string (`'standard'`, `'angry'`, `'dark'`, `'iceskate'`, `'superchess'`). Accepts an optional `{ chess960: true }` option.
+- **`setupGame(variant, options)`** — creates a `ChessEngine` and `ChessUI` pair pre-configured for the given variant string (`'standard'`, `'angry'`, `'dark'`, `'iceskate'`, `'superchess'`, `'risky'`). Accepts an optional `{ chess960: true }` option.
 - **`playMoves(ui, moves)`** — drives the UI through an array of algebraic-style move strings (parsed by `tests/parse-notation.js`), automatically handling two-click selection + confirmation and the confirm-move flow.
 
 ### Test files
 
-| File                       | Coverage                                                                                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tests/standard.test.js`   | Opening moves, captures, Scholar's mate, en passant, castling, promotion, stalemate, history, notation, insufficient material, check/checkmate preview |
-| `tests/angry.test.js`      | Friendly captures, capture accounting, `*` notation, king-capture prevention, pending-move preview, history navigation, checkmate edge cases           |
-| `tests/dark.test.js`       | Rules unchanged vs standard, Scholar's mate, en passant, castling, pending-move preview, history navigation                                            |
-| `tests/iceskate.test.js`   | Forced maximum slide, check-blocking exception, knight behaviour, captures at max distance, capture accounting, pending-move preview                   |
-| `tests/superchess.test.js` | Amazon promotion, promotion capture accounting, amazon queen/knight movement, amazon checkmate, history navigation, other promotion options            |
+| File                       | Coverage                                                                                                                                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tests/standard.test.js`   | Opening moves, captures, Scholar's mate, en passant, castling, promotion, stalemate, history, notation, insufficient material, check/checkmate preview                                                 |
+| `tests/angry.test.js`      | Friendly captures, capture accounting, `*` notation, king-capture prevention, pending-move preview, history navigation, checkmate edge cases                                                           |
+| `tests/dark.test.js`       | Rules unchanged vs standard, Scholar's mate, en passant, castling, pending-move preview, history navigation                                                                                            |
+| `tests/iceskate.test.js`   | Forced maximum slide, check-blocking exception, knight behaviour, captures at max distance, capture accounting, pending-move preview                                                                   |
+| `tests/superchess.test.js` | Amazon promotion, promotion capture accounting, amazon queen/knight movement, amazon checkmate, history navigation, other promotion options                                                            |
+| `tests/risky.test.js`      | No-check rules, king capture, point-based scoring, castling through check, pinned pieces move freely, en passant, promotion, 50-move rule, threefold repetition, notation, serialisation, move preview |
 
 ### Adding tests
 

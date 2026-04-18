@@ -28,6 +28,7 @@ exports.notifyPlayerTurn = onValueWritten(
     const variant = game.variant ?? "iceskate";
     const isIceskate = variant.startsWith("iceskate");
     const isAngry = variant.startsWith("angry");
+    const isRisky = variant.startsWith("risky");
     const isDark = variant.startsWith("dark");
     const isSuperchess = variant.startsWith("superchess");
     const is960 = variant.endsWith("960") || variant.endsWith("-960");
@@ -36,6 +37,8 @@ exports.notifyPlayerTurn = onValueWritten(
       notifTitle = is960 ? "Ice Skate Chess960" : "Ice Skate Chess";
     } else if (isAngry) {
       notifTitle = is960 ? "Angry Chess960" : "Angry Chess";
+    } else if (isRisky) {
+      notifTitle = is960 ? "Risky Chess960" : "Risky Chess";
     } else if (isDark) {
       notifTitle = is960 ? "Dark Chess960" : "Dark Chess";
     } else if (isSuperchess) {

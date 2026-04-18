@@ -18,6 +18,12 @@ Players may capture their own pieces (except the king).
 
 ![Angry Chess](assets/images/angry-chess.png)
 
+### Risky Chess
+
+Like regular chess, except there is no check or checkmate. Kings can be captured like any other piece. Usually the game ends when a king is captured, and the winner is whoever has the most points from captured pieces. The implementation also treats K-vs-K as insufficient material (a draw), and some rule-based endings can still award a win on points.
+
+![Risky Chess](assets/images/risky-chess.png)
+
 ### Dark Chess
 
 Standard chess, but the board is shrouded in darkness. Tap a piece to shine a torch and reveal enemies in its path.
@@ -65,20 +71,23 @@ All variants have a **Chess960** (Fischer Random) mode, where the back rank piec
 
 ### Unit tests (Vitest)
 
-Tests are written with [Vitest](https://vitest.dev/) and live in the `tests/` directory. They cover all five variants: standard chess, Ice Skate, Angry, Dark, and Superchess.
+Tests are written with [Vitest](https://vitest.dev/) and live in the `tests/` directory. They cover all six variants: standard chess, Ice Skate, Angry, Dark, Superchess, and Risky.
 
 ```bash
 npm test            # single run
 npm run test:watch  # watch mode
 ```
 
-| File                       | What's tested                                                         |
-| -------------------------- | --------------------------------------------------------------------- |
-| `tests/standard.test.js`   | Captures, castling, en passant, promotion, stalemate, notation, draws |
-| `tests/angry.test.js`      | Friendly captures, capture accounting, `*` notation, checkmate cases  |
-| `tests/dark.test.js`       | Rules parity with standard, Scholar's mate, castling, en passant      |
-| `tests/iceskate.test.js`   | Forced maximum slide, check-blocking exception, captures              |
-| `tests/superchess.test.js` | Amazon promotion, amazon movement (queen + knight), checkmate         |
+| File                       | What's tested                                                                     |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| `tests/standard.test.js`   | Captures, castling, en passant, promotion, stalemate, notation, draws             |
+| `tests/angry.test.js`      | Friendly captures, capture accounting, `*` notation, checkmate cases              |
+| `tests/dark.test.js`       | Rules parity with standard, Scholar's mate, castling, en passant                  |
+| `tests/iceskate.test.js`   | Forced maximum slide, check-blocking exception, captures                          |
+| `tests/superchess.test.js` | Amazon promotion, amazon movement (queen + knight), checkmate                     |
+| `tests/risky.test.js`      | No check/pin rules, king capture, point scoring, castling through check, notation |
+
+Replay tests in `tests/replays/` drive the engine through full recorded games and verify capture accounting at every move.
 
 Unit tests run automatically on every pull request via GitHub Actions.
 
@@ -96,6 +105,13 @@ npx playwright test tests/browser/dark-chess-draw.test.js
 # Run a single test file with visible browser windows:
 npx playwright test tests/browser/dark-chess-draw.test.js --headed
 ```
+
+| File                                            | What's tested                                                                           |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `tests/browser/dark-chess-draw.test.js`         | Board and notation fully revealed after an agreed draw (Dark Chess)                     |
+| `tests/browser/dark-chess-stalemate.test.js`    | Board and notation fully revealed after stalemate (Dark Chess)                          |
+| `tests/browser/risky-chess-game-over.test.js`   | Game-over text from both perspectives, capturer loses on points, draw on equal material |
+| `tests/browser/replays/2026-04-14-dark.test.js` | Full game replay — capture accounting correct from both perspectives                    |
 
 Browser tests require a running local server — the Playwright config starts one automatically via `start-test.sh`.
 
