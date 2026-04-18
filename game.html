@@ -1188,7 +1188,9 @@
           titleText = "You Lose";
           // Flip "ahead" to "behind" for the loser's perspective
           const r = engine.resultReason || "";
-          reasonText = r ? `by ${r.replace("points ahead", "points behind")}` : "";
+          reasonText = r
+            ? `by ${r.replace("points ahead", "points behind").replace("point ahead", "point behind")}`
+            : "";
         }
 
         title.textContent = titleText;
