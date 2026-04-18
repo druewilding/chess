@@ -20,7 +20,7 @@ Players may capture their own pieces (except the king).
 
 ### Risky Chess
 
-Like regular chess, except there is no check or checkmate. Kings can be captured like any other piece. The game ends when a king is captured — the winner is whoever has the most points from captured pieces.
+Like regular chess, except there is no check or checkmate. Kings can be captured like any other piece. Usually the game ends when a king is captured, and the winner is whoever has the most points from captured pieces. The implementation also treats K-vs-K as insufficient material (a draw), and some rule-based endings can still award a win on points.
 
 ![Risky Chess](assets/images/risky-chess.png)
 
