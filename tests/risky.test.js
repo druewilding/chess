@@ -321,4 +321,46 @@ describe("Risky Chess", () => {
       .cancelPreview()
       .assertCaptures({ white: [], black: [] });
   });
+
+  // ── Full-game scenarios (mirror browser tests) ─────────────────────
+
+  it("white wins by king capture — c4 d5 Qa4 dxc4 Qxe8#", () => {
+    // White captures: king (12). Black captures: pawn (1). Diff = 11.
+    chess("risky")
+      .play("c4", "d5", "Qa4", "dxc4", "Qxe8#")
+      .assertGameOver("white", "king captured — 11 points ahead")
+      .assertCaptures({ white: ["king"], black: ["pawn"] });
+  });
+
+  it("capturer loses on points — black wins after dxe8=N#", () => {
+    // White captures king but black has more total capture points.
+    // White captures: 3 pawns + king = 15.
+    // Black captures: pawn + rook + queen + bishop + pawn = 19 (knight consumed by promotion).
+    // Black wins by 4.
+    chess("risky")
+      .play(
+        "d4", "g5", "d5", "e5", "dxe6", "g4", "Nh3", "gxh3", "Nc3", "hxg2",
+        "Nb5", "gxh1=Q", "exd7", "Qxf1", "dxe8=N#"
+      )
+      .assertGameOver("black", "king captured — 4 points ahead")
+      .assertCaptures({
+        white: ["pawn", "pawn", "pawn", "king"],
+        black: ["pawn", "pawn", "bishop", "rook", "queen"],
+      });
+  });
+
+  it("draw on equal material — Bxe8$ ties at 14", () => {
+    // White: 2 pawns + king = 14. Black: 2 pawns + knight + queen = 14.
+    chess("risky")
+      .play(
+        "d4", "d5", "e4", "e5", "exd5", "Bd6", "Qh5", "exd4", "Nf3", "Be6",
+        "Ng5", "Bxd5", "Ne6", "Bxe6", "Qxf7", "Bxf7", "Bd3", "Bf8", "Bb5", "Bd6",
+        "Bxe8$"
+      )
+      .assertGameOver("draw", "king captured — tied on points")
+      .assertCaptures({
+        white: ["pawn", "pawn", "king"],
+        black: ["pawn", "pawn", "knight", "queen"],
+      });
+  });
 });
