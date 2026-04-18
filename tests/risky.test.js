@@ -89,31 +89,17 @@ describe("Risky Chess", () => {
   // ── Point-based scoring ────────────────────────────────────────────
 
   it("king capture scores include all previous captures — capturer wins", () => {
-    // White captures a pawn first (1 pt), then rook captures king (12 pts).
-    // Total: White 13, Black 0.
+    // White captures a pawn first (1 pt), then the king (12 pts) = 13 pts total.
+    // Black captures nothing = 0 pts. White wins by 13.
     chessFromPosition("...k..../......../......../......../...p..../......../......../...RK...", {
       variant: "risky",
     })
-      .play("Rxd4") // white captures pawn (1 pt)
+      .play("Rxd4") // white rook captures pawn on d4 (1 pt); rook now on d4, same file as king
       .assertCaptures({ white: ["pawn"], black: [] })
-      .play("Kc7") // black moves king
-      .play("Rd7") // white rook chases
-      .play("Kb6") // black king runs
-      .play("Rd6") // rook checks again
-      .play("Ka5") // king runs
-      .play("Rd5") // rook follows
-      .play("Ka4")
-      .play("Rd4")
-      .play("Ka3")
-      .play("Rd3")
-      .play("Ka2")
-      .play("Rd2")
-      .play("Ka1")
-      .play("Rd1")
-      .play("Ka2")
-      .play("Rd2")
-      .play("Ka1")
-      .assertNotGameOver(); // Still going...
+      .play("Kd7") // black king steps to d7 (still on d-file)
+      .play("Rxd7#") // white rook captures king on d7 (12 pts); total white = 13
+      .assertCaptures({ white: ["pawn", "king"], black: [] })
+      .assertGameOver("white", "king captured — 13 points ahead");
   });
 
   it("black wins on points despite white capturing the king", () => {
