@@ -174,14 +174,20 @@ describe("Superchess", () => {
       .play("hxg2")
       .assertCaptures({ white: ["pawn"], black: ["pawn"] })
       .assertMaterial(0)
-      .play("Nf3", "gxh1=A")
-      // black captures pawn(g2) + rook(h1); promoting pawn credited to white;
-      // no white amazon previously captured so amazon goes into black's pen
+      .play("Nf3")
+      .preview("gxh1=A")
+      // preview: black captures pawn(g2) + rook(h1); promoting pawn → white;
+      // no white amazon captured so amazon goes into black's pen
+      .assertPreviewCaptures({ white: ["pawn", "pawn"], black: ["pawn", "rook", "amazon"] })
+      .commitPreview()
       .assertCaptures({ white: ["pawn", "pawn"], black: ["pawn", "rook", "amazon"] })
-      .play("bxc8=A")
-      // white captures bishop(c8); promoting pawn credited to black;
-      // the amazon in black's pen belongs to black's earlier promotion, NOT a
-      // white piece that can be "returned" — so white should get its own amazon
+      .preview("bxc8=A")
+      // preview: white captures bishop(c8); promoting pawn → black;
+      // the amazon in black's pen belongs to black's OWN promotion, NOT a
+      // captured white piece — so white should get its own amazon
+      .assertPreviewCaptures({ white: ["pawn", "pawn", "bishop", "amazon"], black: ["pawn", "pawn", "rook", "amazon"] })
+      .assertPreviewMaterial(-2)
+      .commitPreview()
       .assertCaptures({ white: ["pawn", "pawn", "bishop", "amazon"], black: ["pawn", "pawn", "rook", "amazon"] })
       .assertMaterial(-2); // black is 2 points ahead
   });
