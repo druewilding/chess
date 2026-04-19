@@ -761,6 +761,35 @@ export class ChessEngine {
     return false;
   }
 
+  // Count how many of a player's pieces of a given type have been genuinely
+  // captured by the opponent (as opposed to entries in the capture list that
+  // were self-credited from the opponent's own promotions).
+  //
+  // genuineCaptured = (pieces the player ever had) − (pieces still on board)
+  //   where "ever had" = starting pieces + prior promotions to that type.
+  //
+  // IMPORTANT: call this BEFORE placing a newly promoted piece on the board so
+  // that both makeMove() and UI preview callers see consistent counts.
+  genuineCapturedCount(color, pieceType) {
+    let startingCount = 0;
+    for (let r = 0; r < 8; r++)
+      for (let f = 0; f < 8; f++) {
+        const p = this.startingBoard[r][f];
+        if (p && p.color === color && p.type === pieceType) startingCount++;
+      }
+    let previousPromotions = 0;
+    for (const m of this.moveHistory) {
+      if (m.piece.color === color && m.promotion === pieceType) previousPromotions++;
+    }
+    let onBoard = 0;
+    for (let r = 0; r < 8; r++)
+      for (let f = 0; f < 8; f++) {
+        const p = this.board[r][f];
+        if (p && p.color === color && p.type === pieceType) onBoard++;
+      }
+    return startingCount + previousPromotions - onBoard;
+  }
+
   // Simulate a move and return { check, checkmate } for the opponent — without
   // permanently modifying game state. Used for move-preview indicators.
   previewMoveResult(fromRank, fromFile, toRank, toFile, promotion = null, castling = undefined) {
@@ -873,55 +902,33 @@ export class ChessEngine {
     this.board[toRank][toFile] = piece;
     this.board[fromRank][fromFile] = null;
 
-    // Promotion
+    // Promotion — capture-pen accounting runs BEFORE the board is updated so
+    // that genuineCapturedCount() sees the pre-promotion board (consistent with
+    // the UI preview path which also reads the pre-move board).
     if (matchingMove.promotion) {
-      this.board[toRank][toFile] = { type: matchingMove.promotion, color: piece.color };
-
-      // Material accounting: the promoting pawn leaves the board, so the opponent
-      // effectively "gains" a pawn. The promoted piece either returns from the
-      // opponent's captures (if they captured one earlier) or the promoting player
-      // is credited with capturing one (it appeared out of nowhere).
       const opponent = piece.color === "white" ? "black" : "white";
-      this.capturedPieces[opponent].push("pawn");
       const promoType = matchingMove.promotion;
 
-      // To decide whether the opponent genuinely captured one of the promoter's
-      // pieces of this type (vs the opponent's capture list containing a self-
-      // credited entry from *their own* promotion), count how many of promoType
-      // the promoter has ever had minus how many are on the board right now.
-      let startingCount = 0;
-      for (let r = 0; r < 8; r++)
-        for (let f = 0; f < 8; f++) {
-          const p = this.startingBoard[r][f];
-          if (p && p.color === piece.color && p.type === promoType) startingCount++;
-        }
-      let previousPromotions = 0;
-      for (const m of this.moveHistory) {
-        if (m.piece.color === piece.color && m.promotion === promoType) previousPromotions++;
-      }
-      let onBoard = 0;
-      for (let r = 0; r < 8; r++)
-        for (let f = 0; f < 8; f++) {
-          const p = this.board[r][f];
-          if (p && p.color === piece.color && p.type === promoType) onBoard++;
-        }
-      // onBoard includes the just-placed piece, so (onBoard - 1) is what was
-      // on the board before this promotion. The difference is genuine captures.
-      const capturedFromPromoter = startingCount + previousPromotions - (onBoard - 1);
+      // The promoting pawn leaves the board → opponent "gains" a pawn.
+      this.capturedPieces[opponent].push("pawn");
 
+      // Determine whether the opponent genuinely captured one of the promoter's
+      // pieces of this type. If so, the promoted piece "comes back" from their
+      // captures; otherwise the promoting player is credited with a new one.
+      const capturedFromPromoter = this.genuineCapturedCount(piece.color, promoType);
       if (capturedFromPromoter > 0) {
         const opponentIdx = this.capturedPieces[opponent].indexOf(promoType);
         if (opponentIdx !== -1) {
-          // Opponent had captured one of these — the promoted piece "came back"
           this.capturedPieces[opponent].splice(opponentIdx, 1);
         } else {
-          // All captures were already returned by earlier promotions
           this.capturedPieces[piece.color].push(promoType);
         }
       } else {
-        // No such piece was previously captured — credit the promoting player
         this.capturedPieces[piece.color].push(promoType);
       }
+
+      // Now place the promoted piece on the board.
+      this.board[toRank][toFile] = { type: promoType, color: piece.color };
     }
 
     // Castling - move the rook
