@@ -20,13 +20,9 @@ export const VARIANTS = [
       board or a friendly piece, or capture an enemy piece. They <em>may</em> stop at an intermediate square to block
       check, as this is the furthest they can go in this situation.`,
     screenshot: "assets/images/ice-skate-chess.webp",
-    // The variant's icon: a 3×3 corner of a board showing one move, marked the
-    // way the real board marks it. Squares are numbered 0–8 from the top left.
-    // `pieces` are "colour/type", `selected` is the piece about to move, `dots`
-    // are squares it can move to, `rings` are pieces it can capture, and
-    // `shroud` squares are dark (for Dark Chess).
-    // Here: the rook can only stop at the far end of each line.
-    icon: { pieces: { 6: "white/rook" }, selected: 6, dots: [0, 8] },
+    // A 3×3 corner of a board showing one move, for the list of variants.
+    // Made with the screenshots and icons by `npm run screenshots`.
+    icon: "assets/images/icons/iceskate.webp",
   },
   {
     id: "angry",
@@ -37,8 +33,7 @@ export const VARIANTS = [
       except your own king. Be careful: sacrificing your own material can open lines, but it can also backfire
       spectacularly.`,
     screenshot: "assets/images/angry-chess.webp",
-    // The knight can capture its own pawn
-    icon: { pieces: { 6: "white/knight", 1: "white/pawn" }, selected: 6, dots: [5], rings: [1] },
+    icon: "assets/images/icons/angry.webp",
   },
   {
     id: "risky",
@@ -52,8 +47,7 @@ export const VARIANTS = [
       winner is whoever has the <strong>most points</strong> from captured pieces (king = 12 pts). If the points are
       equal, the game is a draw.`,
     screenshot: "assets/images/risky-chess.webp",
-    // The queen can capture the king
-    icon: { pieces: { 8: "white/queen", 0: "black/king" }, selected: 8, dots: [4], rings: [0] },
+    icon: "assets/images/icons/risky.webp",
   },
   {
     id: "dark",
@@ -64,14 +58,7 @@ export const VARIANTS = [
       pieces, but enemy pieces are completely hidden. Tap one of your pieces to <strong>shine a torch</strong>: its
       legal moves light up, revealing any enemies lurking in the path.`,
     screenshot: "assets/images/dark-chess.webp",
-    // The bishop's torch reveals a hidden knight
-    icon: {
-      pieces: { 6: "white/bishop", 2: "black/knight" },
-      selected: 6,
-      dots: [4],
-      rings: [2],
-      shroud: [0, 1, 3, 5, 7, 8],
-    },
+    icon: "assets/images/icons/dark.webp",
   },
   {
     id: "superchess",
@@ -81,8 +68,7 @@ export const VARIANTS = [
     rules: `The same as standard chess, until you get to promotion, at which point you can claim an
       <strong>Amazon</strong>, a powerful piece combining the abilities of both a queen and a knight.`,
     screenshot: "assets/images/superchess.webp",
-    // An Amazon: a queen and a knight in one piece
-    icon: { pieces: { 4: "white/amazon" }, selected: 4 },
+    icon: "assets/images/icons/superchess.webp",
   },
 ];
 
@@ -137,28 +123,12 @@ export function applyVariantColour(element, variant) {
   element.style.setProperty("--variant", `light-dark(${light}, ${dark})`);
 }
 
-/** The variant's little board icon, as an element. */
+/** The variant's icon, as an element. */
 export function variantIcon(variant) {
-  const { pieces = {}, selected = null, dots = [], rings = [], shroud = [] } = variant.icon;
-  const board = document.createElement("span");
-  board.className = "variant-icon";
-  board.setAttribute("aria-hidden", "true");
-  applyVariantColour(board, variant);
-  for (let i = 0; i < 9; i++) {
-    const square = document.createElement("span");
-    const isLight = (Math.floor(i / 3) + (i % 3)) % 2 === 0;
-    square.className = `variant-icon__square ${isLight ? "light" : "dark"}`;
-    if (shroud.includes(i)) square.classList.add("variant-icon__square--shroud");
-    if (selected === i) square.classList.add("variant-icon__square--selected");
-    if (dots.includes(i)) square.classList.add("variant-icon__square--dot");
-    if (rings.includes(i)) square.classList.add("variant-icon__square--ring");
-    if (pieces[i]) {
-      const img = document.createElement("img");
-      img.src = `assets/pieces/${pieces[i]}.webp`;
-      img.alt = "";
-      square.appendChild(img);
-    }
-    board.appendChild(square);
-  }
-  return board;
+  const icon = document.createElement("img");
+  icon.className = "variant-icon";
+  icon.src = variant.icon;
+  icon.alt = "";
+  applyVariantColour(icon, variant);
+  return icon;
 }

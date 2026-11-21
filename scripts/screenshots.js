@@ -1,16 +1,22 @@
-// Takes the variant screenshots in assets/images: one board per variant, set up
-// to show off what makes it different, on a transparent background so it suits
-// light and dark pages alike.
+// Takes the variant pictures in assets/images, from the real board so they match
+// the game exactly:
+//
+// - a screenshot per variant: the whole board, set up to show off what makes the
+//   variant different, on a transparent background so it suits light and dark
+//   pages alike
+// - an icon per variant (assets/images/icons): a 3×3 corner of a board showing
+//   one move, for the list of variants on the home page
 //
 //   npm run screenshots              # all of them
 //   npm run screenshots -- risky     # just the ones whose file name contains "risky"
+//   npm run screenshots -- icons     # just the icons
 //
 // Each shot opens a bot game on a local server, sets up a position on the engine
 // (window.engine and window.ui are exposed on localhost), selects a piece so its
 // moves show, and captures the board. No Firebase config is needed.
 
 import { spawn } from "node:child_process";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 
 import { chromium } from "@playwright/test";
 
@@ -22,6 +28,14 @@ const VIEWPORT = { width: 900, height: 900 };
 const MARGIN = 24;
 const SCALE = 2;
 const WEBP_QUALITY = 0.85;
+
+// Icons are shown at about a third of their size, so they hide the coordinates
+// and draw the capture rings and move dots heavier to stay readable
+const ICON_STYLE = `
+  .coord { display: none; }
+  .square.legal-capture::after { border-width: 7px; }
+  .square.legal-move::after { width: 34%; height: 34%; }
+`;
 
 const BACK_RANK = ["rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"];
 
@@ -47,6 +61,8 @@ function startingPieces(backRank = BACK_RANK) {
 
 // One entry per image. Each shot either plays `moves` (from–to pairs, white
 // first, ending with white to move) or sets up `pieces`, then selects `select`.
+// A shot with `crop` (the top-left and bottom-right squares, e.g. "a3:c1") is an
+// icon: just those squares, without coordinates.
 const SHOTS = [
   {
     file: "ice-skate-chess.webp",
@@ -95,6 +111,48 @@ const SHOTS = [
     // A shuffled back rank
     pieces: startingPieces(["bishop", "bishop", "knight", "rook", "king", "rook", "queen", "knight"]),
   },
+
+  // Icons: the bottom-left 3×3 corner of a board, with the kings kept outside it
+  {
+    file: "icons/iceskate.webp",
+    variant: "iceskate",
+    // The rook can only stop at the far end of each line
+    pieces: { a1: "white rook", a4: "white pawn", d1: "white king", h8: "black king" },
+    select: "a1",
+    crop: "a3:c1",
+  },
+  {
+    file: "icons/angry.webp",
+    variant: "angry",
+    // The knight can capture its own pawn
+    pieces: { a1: "white knight", b3: "white pawn", e1: "white king", e8: "black king" },
+    select: "a1",
+    crop: "a3:c1",
+  },
+  {
+    file: "icons/risky.webp",
+    variant: "risky",
+    // The queen can capture the king
+    pieces: { c1: "white queen", a3: "black king", h1: "white king" },
+    select: "c1",
+    crop: "a3:c1",
+  },
+  {
+    file: "icons/dark.webp",
+    variant: "dark",
+    // The bishop's torch reveals a hidden knight
+    pieces: { a1: "white bishop", c3: "black knight", e1: "white king", h8: "black king" },
+    select: "a1",
+    crop: "a3:c1",
+  },
+  {
+    file: "icons/superchess.webp",
+    variant: "superchess",
+    // An Amazon can go anywhere around it
+    pieces: { b2: "white amazon", e1: "white king", e8: "black king" },
+    select: "b2",
+    crop: "a3:c1",
+  },
 ];
 
 /** Turn "e4" into the engine's { rank, file }: rank 0 is the 8th rank. */
@@ -132,7 +190,9 @@ async function setUpPosition(page, shot) {
 }
 
 async function takeShot(browser, shot) {
-  const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: SCALE, colorScheme: "light" });
+  // Icons are shown small, so 1× (180px) is already sharp enough
+  const deviceScaleFactor = shot.crop ? 1 : SCALE;
+  const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor, colorScheme: "light" });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
 
@@ -149,25 +209,42 @@ async function takeShot(browser, shot) {
   // Transparent page, and no animations mid-capture
   await page.addStyleTag({
     content: `html, body, .page { background: transparent; }
-      *, *::before, *::after { transition: none; animation: none; }`,
+      *, *::before, *::after { transition: none; animation: none; }
+      ${shot.crop ? ICON_STYLE : ""}`,
   });
   await page.waitForTimeout(300);
 
-  const box = await page.locator("#chess-board").boundingBox();
-  const png = await page.screenshot({
-    omitBackground: true,
-    clip: {
-      x: box.x - MARGIN,
-      y: box.y - MARGIN,
-      width: box.width + MARGIN * 2,
-      height: box.height + MARGIN * 2,
-    },
-  });
-  await writeFile(`assets/images/${shot.file}`, await toWebp(page, png));
+  const png = await page.screenshot({ omitBackground: true, clip: await clipFor(page, shot) });
+  const path = `assets/images/${shot.file}`;
+  await mkdir(path.slice(0, path.lastIndexOf("/")), { recursive: true });
+  await writeFile(path, await toWebp(page, png));
   await page.close();
 
   if (errors.length) throw new Error(`${shot.file}: page errors: ${errors.join(", ")}`);
-  console.log(`✓ assets/images/${shot.file}`);
+  console.log(`✓ ${path}`);
+}
+
+/** The area to capture: the board with room for its shadow, or just the cropped squares. */
+async function clipFor(page, shot) {
+  const squareBox = async (name) => {
+    const { rank, file } = square(name);
+    return page.locator(`#chess-board .square[data-rank="${rank}"][data-file="${file}"]`).boundingBox();
+  };
+
+  if (shot.crop) {
+    const [topLeft, bottomRight] = shot.crop.split(":");
+    const from = await squareBox(topLeft);
+    const to = await squareBox(bottomRight);
+    return { x: from.x, y: from.y, width: to.x + to.width - from.x, height: to.y + to.height - from.y };
+  }
+
+  const box = await page.locator("#chess-board").boundingBox();
+  return {
+    x: box.x - MARGIN,
+    y: box.y - MARGIN,
+    width: box.width + MARGIN * 2,
+    height: box.height + MARGIN * 2,
+  };
 }
 
 /**

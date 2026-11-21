@@ -27,6 +27,7 @@ describe("variants", () => {
       expect(variant.rules).toBeTruthy();
       expect(variant.colour).toHaveLength(2);
       expect(variant.screenshot).toMatch(/^assets\/images\/.+\.webp$/);
+      expect(variant.icon).toBe(`assets/images/icons/${variant.id}.webp`);
     }
   });
 

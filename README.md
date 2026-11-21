@@ -73,7 +73,7 @@ All variants have a **Chess960** (Fischer Random) mode, where the back rank piec
 
 1. Add the rule to `js/chess-engine.js` behind a new flag (e.g. `this.mirror = options.mirror || false`).
 2. Add an entry to `VARIANTS` in `js/variants.js` whose `id` is that flag's name. The home page, game page, breadcrumb, colours and rules all come from it, and every variant gets a Chess960 version for free.
-3. Add a screenshot: add a shot to `scripts/screenshots.js` and run `npm run screenshots -- <name>` (see `.claude/skills/screenshots/SKILL.md`).
+3. Add its screenshot and icon: add both to `scripts/screenshots.js` and run `npm run screenshots -- <name>` (see `.claude/skills/screenshots/SKILL.md`).
 4. Add tests in `tests/`.
 
 ## Testing

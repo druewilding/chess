@@ -1,13 +1,17 @@
 ---
 name: screenshots
-description: Take or retake the variant screenshots in assets/images (shown on the home page and in the README). Use when adding a new variant, when the board or page design changes, or when asked to update the screenshots.
+description: Take or retake the variant screenshots and icons in assets/images (shown on the home page and in the README). Use when adding a new variant, when the board or page design changes, or when asked to update the screenshots or icons.
 ---
 
-# Variant screenshots
+# Variant screenshots and icons
 
 Each variant has one screenshot in `assets/images/`, named in its `screenshot` field in `js/variants.js`. The home page shows it beside the rules, and the README shows it under the variant's heading. Chess960 has its own, `chess-960.webp`.
 
-They're all made the same way by `scripts/screenshots.js`, so they match:
+Each variant also has an icon in `assets/images/icons/<id>.webp`, named in its `icon` field. It's the picture beside the variant's name in the list on the home page.
+
+All of them are taken from the real board by `scripts/screenshots.js`, so they look exactly like the game (the move dots, capture rings, Dark Chess fog). Never draw them by hand or in CSS.
+
+Screenshots are:
 
 - just the board, at its full 480px width, with 24px around it for its shadow
 - a transparent background, so they suit light and dark pages (the README on GitHub, the home page in either theme)
@@ -16,11 +20,20 @@ They're all made the same way by `scripts/screenshots.js`, so they match:
 - white to move, with one white piece selected so its moves show what makes the variant different
 - the last move highlighted, as in a real game
 
+Icons are:
+
+- the bottom-left 3×3 corner of a board (a1 to c3), without coordinates, at 1× (about 180px square; the page shows them at 56px)
+- drawn with heavier capture rings and move dots (`ICON_STYLE`), so they're still readable that small
+- one move: a white piece selected, with dots where it can go and rings on what it can capture, showing the variant's rule
+- set up with `pieces`, with both kings outside the corner unless a king is the point (as in Risky Chess)
+- WebP, about 3 KB each
+
 ## Taking them
 
 ```sh
 npm run screenshots            # all of them
 npm run screenshots -- risky   # only the files whose name contains "risky"
+npm run screenshots -- icons   # only the icons
 ```
 
 The script starts its own server on port 3848, opens a bot game for each shot, sets up the position through `window.engine` and `window.ui` (exposed on localhost only, see `game.html`), clicks the piece to select it, and saves the board. It doesn't need Firebase or `.env`.
@@ -48,6 +61,26 @@ The script starts its own server on port 3848, opens a bot game for each shot, s
    - The moves must end with white to move (an even number of moves). The script stops with an error if a move is illegal in that variant or it's black's turn.
 
 4. Run `npm run screenshots -- <name>`.
+
+## Adding an icon for a new variant
+
+1. Give the variant `icon: "assets/images/icons/<id>.webp"` in `js/variants.js` (a unit test checks the name).
+2. Add an entry to `SHOTS` with `crop: "a3:c1"`:
+
+   ```js
+   {
+     file: "icons/mirror.webp",
+     variant: "mirror",
+     // The knight jumps to the mirrored square
+     pieces: { a1: "white knight", e1: "white king", e8: "black king" },
+     select: "a1",
+     crop: "a3:c1",
+   },
+   ```
+
+   Put only the pieces the move needs in the corner, and anything that limits the move (a blocking pawn, the kings) just outside it. The real legal moves are drawn, so if extra dots clutter the corner, block those lines from outside it.
+
+3. Run `npm run screenshots -- icons` and look at the icon on the home page, where it's small.
 
 ## Checking them
 
