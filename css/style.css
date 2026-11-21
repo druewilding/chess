@@ -173,6 +173,26 @@
     height: 2.5rem;
   }
 
+  /* Each row is the game's link with a remove button after it */
+  .your-games__item {
+    display: flex;
+    align-items: center;
+  }
+
+  .your-games__item .klods-list__link {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .your-games__remove {
+    flex-shrink: 0;
+    margin-inline-end: var(--klods-space-2);
+    padding: var(--klods-space-1) var(--klods-space-2);
+    font-size: var(--klods-font-size-lg);
+    line-height: 1;
+    color: var(--klods-color-muted);
+  }
+
   /* A status that doesn't fit beside the name moves onto its own line */
   .your-games .klods-list__link {
     flex-wrap: wrap;
