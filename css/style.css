@@ -366,6 +366,21 @@
     font-weight: 600;
   }
 
+  /* On a phone the breadcrumb and the status don't fit on one line. "Chess
+   * variants" becomes "Chess", and the last crumb ("Against a friend") goes,
+   * along with the chevron before it: the player label above the board says
+   * who you're playing. */
+  @media (max-width: 520px) {
+    .wide-only,
+    #game-crumb {
+      display: none;
+    }
+
+    .klods-breadcrumb__item:has(+ #game-crumb)::after {
+      display: none;
+    }
+  }
+
   /* The status is emptied while the waiting overlay is up */
   .klods-status:empty {
     display: none;
