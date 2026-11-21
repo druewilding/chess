@@ -122,7 +122,6 @@
     <script type="module">
       import { ChessEngine } from "./js/chess-engine.js";
       import { ChessUI } from "./js/chess-ui.js";
-      import { GameManager } from "./js/game-manager.js";
       import {
         CHESS960_RULES,
         VARIANTS,
@@ -149,7 +148,9 @@
       if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
         window.engine = engine;
       }
-      const gm = new GameManager();
+      // Firebase is only loaded for games with a friend (see initGame), so bot games
+      // still work if it can't load (e.g. locally without js/firebase-config.js).
+      let gm = null;
 
       let ui;
       let myColor = myColorStored || null;
@@ -637,6 +638,8 @@
           return;
         }
 
+        const { GameManager } = await import("./js/game-manager.js");
+        gm = new GameManager();
         await gm.init();
 
         // Register service worker (needed for push + PWA install prompt)
