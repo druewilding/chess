@@ -58,14 +58,22 @@ All variants have a **Chess960** (Fischer Random) mode, where the back rank piec
 
 ## Project Structure
 
-| File                 | Responsibility                                            |
-| -------------------- | --------------------------------------------------------- |
-| `index.html`         | Lobby — variant picker, game creation/joining, bot launch |
-| `game.html`          | Gameplay — board, move history, bot AI, Firebase sync     |
-| `js/chess-engine.js` | Rules engine — move generation, legality, check/checkmate |
-| `js/chess-ui.js`     | Board rendering — piece display, selection, animation     |
-| `js/game-manager.js` | Firebase — game creation, real-time sync, draw offers     |
-| `functions/index.js` | Cloud Function — FCM push notifications                   |
+| File                 | Responsibility                                                              |
+| -------------------- | --------------------------------------------------------------------------- |
+| `index.html`         | Home — new game form, rules for the chosen variant, join a game             |
+| `game.html`          | Gameplay — board, move history, bot AI, Firebase sync                       |
+| `js/variants.js`     | Every variant's name, tagline, colour, rules, screenshot and icon           |
+| `js/chess-engine.js` | Rules engine — move generation, legality, check/checkmate                   |
+| `js/chess-ui.js`     | Board rendering — piece display, selection, animation                       |
+| `js/game-manager.js` | Firebase — game creation, real-time sync, draw offers                       |
+| `css/style.css`      | Site styles, on top of [klods-css](https://www.npmjs.com/package/klods-css) |
+| `functions/index.js` | Cloud Function — FCM push notifications                                     |
+
+### Adding a variant
+
+1. Add the rule to `js/chess-engine.js` behind a new flag (e.g. `this.mirror = options.mirror || false`).
+2. Add an entry to `VARIANTS` in `js/variants.js` whose `id` is that flag's name. The home page, game page, breadcrumb, colours and rules all come from it, and every variant gets a Chess960 version for free.
+3. Add a screenshot to `assets/images/`, and tests in `tests/`.
 
 ## Testing
 
