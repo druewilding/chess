@@ -98,6 +98,42 @@
     height: 2rem;
   }
 
+  /* Shows one of a pair of images to match the theme: the chosen one, or the
+   * system's when it's on Auto (no data-theme) */
+  .for-dark {
+    display: none;
+  }
+
+  :root[data-theme="dark"] .for-light {
+    display: none;
+  }
+
+  :root[data-theme="dark"] .for-dark {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .for-light {
+      display: none;
+    }
+
+    :root:not([data-theme]) .for-dark {
+      display: block;
+    }
+  }
+
+  /* ===== Footer ===== */
+  .site-footer {
+    display: flex;
+    justify-content: center;
+    padding-top: var(--klods-space-4);
+    border-top: 1px solid var(--klods-color-border);
+  }
+
+  .site-footer .klods-button {
+    font-size: var(--klods-font-size-sm);
+  }
+
   .join-form {
     display: flex;
     gap: var(--klods-space-2);
