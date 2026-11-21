@@ -322,46 +322,9 @@
     font-weight: 600;
   }
 
-  .game-status {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--klods-space-2);
-    font-size: var(--klods-font-size-sm);
-    font-weight: 600;
-    color: var(--klods-color-fg);
-    opacity: 0.8;
-  }
-
-  .game-status::before {
-    content: "";
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--klods-color-border);
-  }
-
-  .game-status:empty {
+  /* The status is emptied while the waiting overlay is up */
+  .klods-status:empty {
     display: none;
-  }
-
-  .game-status.your-turn {
-    color: var(--klods-color-success);
-    opacity: 1;
-  }
-
-  .game-status.your-turn::before {
-    background: var(--klods-color-success);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--klods-color-success) 30%, transparent);
-  }
-
-  .game-status.review-mode {
-    color: var(--klods-color-link);
-    font-style: italic;
-    opacity: 1;
-  }
-
-  .game-status.review-mode::before {
-    background: var(--klods-color-link);
   }
 
   .game-main {

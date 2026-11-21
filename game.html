@@ -7,7 +7,7 @@
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#4a9eff" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/klods-css@2.0.0/dist/klods.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/klods-css@2.1.0/dist/klods.min.css" />
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
@@ -24,7 +24,7 @@
             <li class="klods-breadcrumb__item" aria-current="page" id="game-crumb"></li>
           </ol>
         </nav>
-        <div id="game-status" class="game-status" role="status">Connecting…</div>
+        <div id="game-status" class="klods-status" role="status">Connecting…</div>
       </header>
 
       <div class="game-main">
@@ -901,24 +901,31 @@
         if (reviewIndex !== null) {
           const liveIndex = positionSnapshots.length - 1;
           statusEl.textContent = `Move ${reviewIndex} / ${liveIndex}`;
-          statusEl.className = "game-status review-mode";
+          statusEl.className = "klods-status klods-status--info";
           updateGameOverButtons();
           return;
         }
         if (engine.gameOver) {
           // Keep the result in view after the game over overlay is closed
-          if (engine.result === "draw") statusEl.textContent = "Draw";
-          else statusEl.textContent = engine.result === myColor ? "You won" : "You lost";
-          statusEl.className = "game-status game-over";
+          if (engine.result === "draw") {
+            statusEl.textContent = "Draw";
+            statusEl.className = "klods-status";
+          } else if (engine.result === myColor) {
+            statusEl.textContent = "You won";
+            statusEl.className = "klods-status klods-status--success";
+          } else {
+            statusEl.textContent = "You lost";
+            statusEl.className = "klods-status klods-status--danger";
+          }
           updateGameOverButtons();
           return;
         }
         if (isMyTurn) {
           statusEl.textContent = "Your turn";
-          statusEl.className = "game-status your-turn";
+          statusEl.className = "klods-status klods-status--success klods-status--pulse";
         } else {
           statusEl.textContent = isBotMode ? "Bot's turn…" : "Opponent's turn";
-          statusEl.className = "game-status";
+          statusEl.className = "klods-status";
         }
         updateGameOverButtons();
       }
