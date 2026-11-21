@@ -26,7 +26,7 @@ describe("variants", () => {
       expect(variant.tagline).not.toMatch(/\.$/);
       expect(variant.rules).toBeTruthy();
       expect(variant.colour).toHaveLength(2);
-      expect(variant.screenshot).toMatch(/^assets\/images\/.+\.png$/);
+      expect(variant.screenshot).toMatch(/^assets\/images\/.+\.webp$/);
     }
   });
 

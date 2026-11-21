@@ -19,7 +19,7 @@ export const VARIANTS = [
       They must travel as far as possible in their chosen direction, stopping only when they hit the edge of the
       board or a friendly piece, or capture an enemy piece. They <em>may</em> stop at an intermediate square to block
       check, as this is the furthest they can go in this situation.`,
-    screenshot: "assets/images/ice-skate-chess.png",
+    screenshot: "assets/images/ice-skate-chess.webp",
     // A 4×4 corner of a board for the variant's icon: squares are numbered 0–15
     // from the top left, pieces are "colour/type", path squares are tinted and
     // target squares are highlighted.
@@ -33,7 +33,7 @@ export const VARIANTS = [
     rules: `Like regular chess, except you can <strong>capture your own pieces</strong>! Every piece is a valid target,
       except your own king. Be careful: sacrificing your own material can open lines, but it can also backfire
       spectacularly.`,
-    screenshot: "assets/images/angry-chess.png",
+    screenshot: "assets/images/angry-chess.webp",
     icon: { pieces: { 9: "white/knight", 2: "white/pawn", 15: "white/king" }, target: [2] },
   },
   {
@@ -47,7 +47,7 @@ export const VARIANTS = [
       danger! The game ends when a king is <strong>captured</strong>, but the capturer doesn't necessarily win. The
       winner is whoever has the <strong>most points</strong> from captured pieces (king = 12 pts). If the points are
       equal, the game is a draw.`,
-    screenshot: "assets/images/risky-chess.png",
+    screenshot: "assets/images/risky-chess.webp",
     icon: { pieces: { 1: "black/king", 13: "white/queen" }, path: [9, 5], target: [1] },
   },
   {
@@ -58,7 +58,7 @@ export const VARIANTS = [
     rules: `Standard chess, but the board is <strong>shrouded in darkness</strong>. You can always see your own
       pieces, but enemy pieces are completely hidden. Tap one of your pieces to <strong>shine a torch</strong>: its
       legal moves light up, revealing any enemies lurking in the path.`,
-    screenshot: "assets/images/dark-chess.png",
+    screenshot: "assets/images/dark-chess.webp",
     icon: {
       pieces: { 13: "white/bishop", 7: "black/knight" },
       path: [10],
@@ -73,7 +73,7 @@ export const VARIANTS = [
     colour: ["#23824a", "#5cc98a"],
     rules: `The same as standard chess, until you get to promotion, at which point you can claim an
       <strong>Amazon</strong>, a powerful piece combining the abilities of both a queen and a knight.`,
-    screenshot: "assets/images/superchess.png",
+    screenshot: "assets/images/superchess.webp",
     icon: { pieces: { 5: "white/pawn", 1: "white/amazon" }, path: [5], target: [1] },
   },
 ];
