@@ -906,7 +906,10 @@
           return;
         }
         if (engine.gameOver) {
-          statusEl.textContent = "";
+          // Keep the result in view after the game over overlay is closed
+          if (engine.result === "draw") statusEl.textContent = "Draw";
+          else statusEl.textContent = engine.result === myColor ? "You won" : "You lost";
+          statusEl.className = "game-status game-over";
           updateGameOverButtons();
           return;
         }
@@ -1127,6 +1130,7 @@
       }
 
       function showGameOver() {
+        updateStatus();
         if (ui && ui.dark) {
           ui.darkRevealed = true;
           ui.render();
