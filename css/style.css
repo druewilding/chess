@@ -111,6 +111,31 @@
   }
 
   /* ===== Home page: new game form and rules ===== */
+  /* ===== Your games (home page) ===== */
+  .your-games__body {
+    display: grid;
+    gap: var(--klods-space-3);
+  }
+
+  .your-games .variant-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  /* A status that doesn't fit beside the name moves onto its own line */
+  .your-games .klods-list__link {
+    flex-wrap: wrap;
+  }
+
+  .your-games__text {
+    display: grid;
+    flex: 1 1 8rem;
+  }
+
+  .your-games__text small {
+    color: var(--klods-color-muted);
+  }
+
   .lobby {
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);

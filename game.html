@@ -182,8 +182,40 @@
       let gameVariant = null; // a variant key from js/variants.js, e.g. 'risky' or 'risky-960'
       let lastCaptureInconsistency = null; // tracks last-logged mismatch to avoid console spam
 
-      // Bot mode: hash looks like #bot:iceskate:white or #bot:iceskate-960:black
+      // Bot mode: hash looks like #bot:iceskate:white:k3x9qd2a or #bot:iceskate-960:black:k3x9qd2a.
+      // The code at the end saves the game in local storage (chess-bot-<code>), so it
+      // carries on where you left it and the home page can list it. Without a code
+      // (e.g. scripts/screenshots.js) it's a fresh game that isn't saved.
       const isBotMode = gameId.startsWith("bot:");
+      const botGameCode = isBotMode ? gameId.split(":")[3] : undefined;
+      const botStorageKey = botGameCode ? "chess-bot-" + botGameCode : null;
+
+      function loadBotGame() {
+        if (!botStorageKey) return null;
+        try {
+          return JSON.parse(localStorage.getItem(botStorageKey));
+        } catch {
+          return null;
+        }
+      }
+
+      function saveBotGame() {
+        if (!botStorageKey || positionSnapshots.length === 0) return;
+        try {
+          localStorage.setItem(
+            botStorageKey,
+            JSON.stringify({
+              variant: gameVariant,
+              colour: myColor,
+              // The last snapshot is the live game, even while reviewing earlier moves
+              state: positionSnapshots[positionSnapshots.length - 1],
+              updatedAt: Date.now(),
+            })
+          );
+        } catch {
+          // Storage is full or blocked: the game still works, it just won't be saved
+        }
+      }
 
       // --- Push notifications ---
 
@@ -271,6 +303,7 @@
         ) {
           positionSnapshots[positionSnapshots.length - 1] = captureSnapshot();
         }
+        if (isBotMode) saveBotGame();
       }
 
       function goToPosition(index) {
@@ -412,6 +445,9 @@
         }
 
         setUpEngine(engine, variant);
+        const saved = loadBotGame();
+        const resumed = saved?.variant === variant && saved?.colour === playerColor;
+        if (resumed) engine.deserialize(saved.state);
         const isDark = engine.dark;
 
         updateVariantDisplay();
@@ -419,7 +455,7 @@
         const flipped = myColor === "black";
         ui = new ChessUI(document.getElementById("chess-board"), engine, {
           flipped,
-          interactive: myColor === "white",
+          interactive: false, // set below, once we know whose turn it is
           onMove: handleLocalMove,
           confirmMove: true,
           dark: isDark,
@@ -431,8 +467,18 @@
           },
         });
 
-        isMyTurn = myColor === "white";
-        positionSnapshots = [captureSnapshot()];
+        if (resumed) {
+          syncSnapshots(); // rebuilds the snapshots from the saved moves
+          const lastMove = engine.moveHistory[engine.moveHistory.length - 1];
+          if (lastMove) ui.setLastMove(lastMove);
+          if (isDark) ui.darkRevealed = engine.gameOver;
+        } else {
+          positionSnapshots = [captureSnapshot()];
+          saveBotGame();
+        }
+        isMyTurn = engine.turn === myColor && !engine.gameOver;
+        ui.interactive = isMyTurn;
+        ui.render();
         updateLabels();
         updateStatus();
         updateMoveList();
@@ -442,11 +488,8 @@
         // Draw offers don't apply vs. bot
         document.getElementById("btn-draw").hidden = true;
 
-        // If player chose black, bot (white) moves first
-        if (myColor === "black") {
-          isMyTurn = false;
-          ui.interactive = false;
-          updateStatus();
+        // The bot moves first if you're black, or carries on if you left during its move
+        if (!engine.gameOver && !isMyTurn) {
           setTimeout(() => makeBotMove(), 500);
         }
       }
@@ -652,7 +695,7 @@
 
       async function initGame() {
         if (isBotMode) {
-          const [, variant, playerColor] = gameId.split(":");
+          const [, variant, playerColor] = gameId.split(":"); // the 4th part is botGameCode
           initBotGame(variant, playerColor);
           return;
         }

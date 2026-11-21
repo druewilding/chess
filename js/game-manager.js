@@ -63,6 +63,13 @@ export class GameManager {
     return this.gameId;
   }
 
+  /** A game's data, or null if there's no game with that code. Doesn't join it. */
+  async getGame(gameId) {
+    const { ref, get } = this._fb;
+    const snapshot = await get(ref(this.db, `games/${gameId}`));
+    return snapshot.exists() ? snapshot.val() : null;
+  }
+
   async joinGame(gameId) {
     const { ref, get, update } = this._fb;
 

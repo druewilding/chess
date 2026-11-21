@@ -38,6 +38,13 @@
 
       <div id="error-message" class="klods-alert klods-alert--danger" role="alert" hidden></div>
 
+      <section id="your-games" class="klods-card your-games" aria-labelledby="your-games-title" hidden>
+        <div class="klods-card__body your-games__body">
+          <h2 id="your-games-title" class="klods-card__title">Your games</h2>
+          <ul id="your-games-list" class="klods-list klods-list--flush"></ul>
+        </div>
+      </section>
+
       <main class="lobby">
         <form id="new-game" class="klods-card new-game" aria-labelledby="new-game-title">
           <div class="klods-card__body new-game__body">
@@ -111,9 +118,10 @@
       const engine = new ChessEngine();
       let gm = null;
 
-      // Firebase is only needed to start or join a game with a friend, so it's
-      // loaded then. That way the variant list and bot games still work if it
-      // can't load (e.g. locally without js/firebase-config.js).
+      // Firebase is only needed for games with a friend, so it's loaded when
+      // there are some to show, or one to start or join. That way the variant
+      // list and bot games still work if it can't load (e.g. locally without
+      // js/firebase-config.js).
       async function ensureInit() {
         if (!gm) {
           const { GameManager } = await import("./js/game-manager.js");
@@ -262,7 +270,9 @@
         const color = colour === "random" ? (Math.random() < 0.5 ? "white" : "black") : colour;
 
         if (opponent === "bot") {
-          window.location.href = `game.html#bot:${key}:${color}`;
+          // The code at the end lets the game page save the game, so you can come back to it
+          const code = crypto.randomUUID().slice(0, 8);
+          window.location.href = `game.html#bot:${key}:${color}:${code}`;
           return;
         }
 
@@ -294,13 +304,151 @@
         }
         try {
           const games = await ensureInit();
-          await games.joinGame(gameId);
-          localStorage.setItem("chess-color-" + gameId, "black");
+          // You get whichever colour is free, which isn't always black
+          const colour = await games.joinGame(gameId);
+          localStorage.setItem("chess-color-" + gameId, colour);
           window.location.href = "game.html#" + gameId;
         } catch (err) {
           showError(err.message);
         }
       });
+
+      // ---- Your games ----
+
+      const DAY = 24 * 60 * 60 * 1000;
+
+      // Bot games are saved in local storage by the game page (chess-bot-<code>).
+      // Finished ones are left out, and forgotten a day after they ended.
+      function savedBotGames() {
+        const rows = [];
+        for (const storageKey of Object.keys(localStorage)) {
+          if (!storageKey.startsWith("chess-bot-")) continue;
+          let saved;
+          try {
+            saved = JSON.parse(localStorage.getItem(storageKey));
+            parseVariantKey(saved.variant);
+          } catch {
+            continue; // Not readable, or a variant that no longer exists
+          }
+          const { variant, colour, state, updatedAt } = saved;
+          if (state.gameOver) {
+            if (Date.now() - updatedAt > DAY) localStorage.removeItem(storageKey);
+            continue;
+          }
+          const yourMove = state.turn === colour;
+          rows.push({
+            href: `game.html#bot:${variant}:${colour}:${storageKey.slice("chess-bot-".length)}`,
+            key: variant,
+            detail: `Playing as ${colour} against the bot`,
+            status: yourMove ? "Your move" : "Bot's move",
+            yourMove,
+            lastMoveAt: updatedAt,
+          });
+        }
+        return rows;
+      }
+
+      // Every game you've started or joined with a friend leaves its code in
+      // local storage (chess-color-<code>, holding your colour). Look each one up
+      // and keep the ones still going.
+      async function friendGames() {
+        const saved = Object.keys(localStorage)
+          .filter((storageKey) => storageKey.startsWith("chess-color-"))
+          .map((storageKey) => ({
+            id: storageKey.slice("chess-color-".length),
+            colour: localStorage.getItem(storageKey),
+          }));
+        if (saved.length === 0) return [];
+
+        let found;
+        try {
+          const manager = await ensureInit();
+          found = await Promise.all(saved.map(({ id }) => manager.getGame(id).catch(() => null)));
+        } catch {
+          return []; // Firebase didn't load: just leave them out
+        }
+
+        const rows = [];
+        saved.forEach(({ id, colour }, i) => {
+          const data = found[i];
+          if (!data || data.status === "finished" || data.state?.gameOver) return;
+          try {
+            parseVariantKey(data.variant);
+          } catch {
+            return; // A variant that no longer exists
+          }
+          const yourMove = data.status === "active" && data.state?.turn === colour;
+          let status = "Their move";
+          if (data.status === "waiting") status = "Waiting for them to join";
+          else if (yourMove) status = "Your move";
+          rows.push({
+            href: `game.html#${id}`,
+            key: data.variant,
+            detail: `Playing as ${colour} · ${id}`,
+            status,
+            yourMove,
+            lastMoveAt: data.lastMoveAt ?? data.createdAt ?? 0,
+          });
+        });
+        return rows;
+      }
+
+      function showYourGames(rows) {
+        // Your move first, then the most recently played
+        rows.sort((a, b) => b.yourMove - a.yourMove || b.lastMoveAt - a.lastMoveAt);
+
+        const list = document.getElementById("your-games-list");
+        list.replaceChildren(
+          ...rows.map((row) => {
+            const { variant } = parseVariantKey(row.key);
+
+            const link = document.createElement("a");
+            link.className = "klods-list__link";
+            link.href = row.href;
+
+            const lead = document.createElement("span");
+            lead.className = "klods-list__lead";
+            lead.append(variantIcon(variant));
+
+            const content = document.createElement("span");
+            content.className = "klods-list__content your-games__text";
+            const name = document.createElement("strong");
+            name.textContent = variantName(row.key);
+            const detail = document.createElement("small");
+            detail.textContent = row.detail;
+            content.append(name, detail);
+
+            const status = document.createElement("span");
+            status.className = row.yourMove ? "klods-status klods-status--success" : "klods-status";
+            status.textContent = row.status;
+            const trail = document.createElement("span");
+            trail.className = "klods-list__trail";
+            trail.append(status);
+
+            link.append(lead, content, trail);
+            const item = document.createElement("li");
+            item.className = "klods-list__item klods-list__item--link";
+            item.append(link);
+            return item;
+          })
+        );
+        document.getElementById("your-games").hidden = rows.length === 0;
+      }
+
+      // Bot games show straight away; games with friends join them once
+      // Firebase has looked them up
+      let botGames = [];
+      try {
+        botGames = savedBotGames();
+      } catch {
+        // No storage: there's nothing saved to list
+      }
+      showYourGames(botGames);
+      friendGames()
+        .catch(() => [])
+        .then((rows) => {
+          if (rows.length > 0) showYourGames([...botGames, ...rows]);
+        });
 
       // Register service worker (enables PWA install + push notifications in game.html)
       if ("serviceWorker" in navigator) {
