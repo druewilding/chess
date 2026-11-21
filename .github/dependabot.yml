@@ -1,0 +1,32 @@
+# Opens pull requests when the tools, the Cloud Functions' packages or the
+# workflows' actions have new versions. They use chore(deps) commits, which
+# release-please doesn't release.
+version: 2
+updates:
+  # Dev tools: Playwright, Vitest, ESLint config, serve
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
+
+  # The Cloud Functions that send push notifications. These run on Firebase,
+  # so check a major update of firebase-admin or firebase-functions there
+  # before merging.
+  - package-ecosystem: npm
+    directory: /functions
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
