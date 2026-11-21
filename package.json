@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.65.1",
-    "eslint-config-plus-prettier": "4.2.10",
+    "eslint-config-plus-prettier": "5.0.0",
     "serve": "14.2.8",
     "vitest": "5.1.1"
   },
