@@ -158,6 +158,7 @@
 
     <script type="module">
       import { ChessEngine } from "./js/chess-engine.js";
+      import { askToConfirm } from "./js/confirm.js";
       import {
         CHESS960_RULES,
         VARIANTS,
@@ -419,6 +420,7 @@
             lastMoveAt: updatedAt,
             // It only lives in this browser, so removing it deletes it
             remove: () => localStorage.removeItem(storageKey),
+            isBot: true,
           });
         }
         return rows;
@@ -468,6 +470,7 @@
             yourMove,
             lastMoveAt: data.lastMoveAt ?? data.createdAt ?? 0,
             remove: () => localStorage.setItem("chess-hidden-" + id, "1"),
+            code: id,
           });
         });
         return rows;
@@ -513,7 +516,17 @@
             remove.textContent = "×";
             remove.title = "Remove from your games";
             remove.setAttribute("aria-label", `Remove ${variantName(row.key)}, ${row.detail}, from your games`);
-            remove.addEventListener("click", () => {
+            remove.addEventListener("click", async () => {
+              const confirmed = await askToConfirm({
+                title: "Remove this game?",
+                message: row.isBot
+                  ? `Your ${variantName(row.key)} game against the bot will be deleted. You can't undo this.`
+                  : `${variantName(row.key)} (${row.code}) will no longer be listed here. You can still open it from its link.`,
+                confirmLabel: "Remove",
+                cancelLabel: "Keep it",
+                danger: true,
+              });
+              if (!confirmed) return;
               try {
                 row.remove();
               } catch {
