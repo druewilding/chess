@@ -49,6 +49,9 @@ All variants have a **Chess960** (Fischer Random) mode, where the back rank piec
 - Push notifications for your opponent's move
 - Offline support via service worker
 - Snapshot replay — step through any move in the game history
+- Your games — the home page lists your games in progress, with whose move it is
+- Bot games are saved in the browser, so you can carry on where you left off
+- Auto, light and dark themes — Auto follows your system setting
 
 ## Tech Stack
 
