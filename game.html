@@ -126,6 +126,7 @@
         CHESS960_RULES,
         VARIANTS,
         applyVariantColour,
+        creditBadge,
         currentEngineFlags,
         setUpEngine,
         variantKey,
@@ -376,9 +377,11 @@
         document.getElementById("btn-new-game").href = `./?variant=${gameVariant}`;
         document.getElementById("game-crumb").textContent = isBotMode ? "Against the bot" : "Against a friend";
 
-        document.getElementById("rules-title").textContent = `How ${label} works`;
-        const credit = variant.by ? `<p>This variant was made up by ${variant.by}.</p>` : "";
-        document.getElementById("rules-text").innerHTML = `<p>${variant.rules}</p>${credit}`;
+        // One span, so the badge stays beside the title in the summary's row
+        const rulesTitle = document.createElement("span");
+        rulesTitle.append(`How ${label} works`, creditBadge(variant) ?? "");
+        document.getElementById("rules-title").replaceChildren(rulesTitle);
+        document.getElementById("rules-text").innerHTML = `<p>${variant.rules}</p>`;
         const rules960 = document.getElementById("rules-960");
         rules960.innerHTML = `<strong>Chess960:</strong> ${CHESS960_RULES}`;
         rules960.hidden = !is960;

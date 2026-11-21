@@ -12,7 +12,8 @@ export const VARIANTS = [
     id: "iceskate",
     name: "Ice Skate Chess",
     tagline: "Sliding pieces can't stop until they hit something",
-    by: "my sibling Luna",
+    // Who made the variant up, shown as a "by Luna" badge
+    by: "Luna",
     // Light and dark versions of the variant's colour
     colour: ["#1f6fc5", "#6aaaf5"],
     rules: `Like regular chess, except sliding pieces (bishops, rooks, and queens) <strong>cannot stop early</strong>.
@@ -39,7 +40,7 @@ export const VARIANTS = [
     id: "risky",
     name: "Risky Chess",
     tagline: "No check, kings can be captured, most points wins",
-    by: "my sibling Luna",
+    by: "Luna",
     colour: ["#b0670a", "#f0a742"],
     rules: `Like regular chess, except there is <strong>no check or checkmate</strong>. You can threaten the
       opponent's king, but they are free to ignore it, or might not even notice. You can even move your own king into
@@ -121,6 +122,15 @@ export function setUpEngine(engine, key) {
 export function applyVariantColour(element, variant) {
   const [light, dark] = variant.colour;
   element.style.setProperty("--variant", `light-dark(${light}, ${dark})`);
+}
+
+/** A "by Luna" badge for a variant someone made up, or null. */
+export function creditBadge(variant) {
+  if (!variant.by) return null;
+  const badge = document.createElement("span");
+  badge.className = "klods-badge credit-badge";
+  badge.textContent = `by ${variant.by}`;
+  return badge;
 }
 
 /** The variant's icon, as an element. */

@@ -95,6 +95,7 @@
         CHESS960_RULES,
         VARIANTS,
         applyVariantColour,
+        creditBadge,
         parseVariantKey,
         setUpEngine,
         variantIcon,
@@ -149,8 +150,11 @@
 
         const text = document.createElement("span");
         text.className = "variant-option__text";
-        const name = document.createElement("strong");
-        name.textContent = variant.name;
+        const name = document.createElement("span");
+        name.className = "variant-option__name";
+        const nameText = document.createElement("strong");
+        nameText.textContent = variant.name;
+        name.append(nameText, creditBadge(variant) ?? "");
         const tagline = document.createElement("small");
         tagline.textContent = variant.tagline;
         text.append(name, tagline);
@@ -232,9 +236,8 @@
 
         const rules = document.getElementById("rules");
         applyVariantColour(rules, variant);
-        document.getElementById("rules-title").textContent = variant.name;
-        const credit = variant.by ? `<p>This variant was made up by ${variant.by}.</p>` : "";
-        document.getElementById("rules-text").innerHTML = `<p>${variant.rules}</p>${credit}`;
+        document.getElementById("rules-title").replaceChildren(variant.name, creditBadge(variant) ?? "");
+        document.getElementById("rules-text").innerHTML = `<p>${variant.rules}</p>`;
 
         const screenshot = document.getElementById("rules-screenshot");
         screenshot.src = variant.screenshot;
