@@ -4,7 +4,7 @@
 //
 // This is a plain script in <head>, not a module, so the saved theme is set
 // before the page is drawn and never flashes the wrong colours. It also wires
-// up the footer's theme buttons ([data-theme-choice]) once the page has loaded.
+// up the footer's theme radio buttons (name="theme") once the page has loaded.
 
 (() => {
   const STORAGE_KEY = "chess-theme";
@@ -22,8 +22,8 @@
   function apply(choice) {
     if (choice === "auto") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.dataset.theme = choice;
-    for (const button of document.querySelectorAll("[data-theme-choice]")) {
-      button.setAttribute("aria-pressed", String(button.dataset.themeChoice === choice));
+    for (const radio of document.querySelectorAll("input[name=theme]")) {
+      radio.checked = radio.value === choice;
     }
   }
 
@@ -31,9 +31,9 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     apply(savedChoice());
-    for (const button of document.querySelectorAll("[data-theme-choice]")) {
-      button.addEventListener("click", () => {
-        const choice = button.dataset.themeChoice;
+    for (const radio of document.querySelectorAll("input[name=theme]")) {
+      radio.addEventListener("change", () => {
+        const choice = radio.value;
         try {
           if (choice === "auto") localStorage.removeItem(STORAGE_KEY);
           else localStorage.setItem(STORAGE_KEY, choice);

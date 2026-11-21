@@ -96,11 +96,14 @@
       </main>
 
       <footer class="site-footer">
-        <div class="klods-button-group" role="group" aria-label="Theme">
-          <button class="klods-button" type="button" data-theme-choice="auto" aria-pressed="true">Auto</button>
-          <button class="klods-button" type="button" data-theme-choice="light" aria-pressed="false">Light</button>
-          <button class="klods-button" type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
-        </div>
+        <fieldset>
+          <legend class="visually-hidden">Theme</legend>
+          <div class="segmented">
+            <label><input type="radio" name="theme" value="auto" checked />Auto</label>
+            <label><input type="radio" name="theme" value="light" />Light</label>
+            <label><input type="radio" name="theme" value="dark" />Dark</label>
+          </div>
+        </fieldset>
       </footer>
     </div>
 
