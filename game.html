@@ -914,7 +914,7 @@
             statusEl.textContent = "You won";
             statusEl.className = "klods-status klods-status--success";
           } else {
-            statusEl.textContent = "You lost";
+            statusEl.textContent = engine.resultReason === "resignation" ? "You resigned" : "You lost";
             statusEl.className = "klods-status klods-status--danger";
           }
           updateGameOverButtons();
@@ -1217,10 +1217,16 @@
         });
         if (confirmed && !engine.gameOver) {
           if (isBotMode) {
+            // While reviewing, engine holds an earlier position: go back to the
+            // live one, and mark its snapshot as over so going back to it after
+            // reviewing still shows the result
+            if (reviewIndex !== null) exitReview();
             engine.gameOver = true;
             engine.result = myColor === "white" ? "black" : "white";
             engine.resultReason = "resignation";
+            isMyTurn = false;
             ui.interactive = false;
+            syncSnapshots();
             showGameOver();
           } else {
             gm.sendResignation(myColor);
