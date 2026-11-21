@@ -163,14 +163,50 @@
 
   /* ===== Home page: new game form and rules ===== */
   /* ===== Your games (home page) ===== */
-  .your-games__body {
-    display: grid;
-    gap: var(--klods-space-3);
+  .your-games {
+    background: var(--klods-card-bg);
+  }
+
+  .your-games__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--klods-space-2) var(--klods-space-3);
+  }
+
+  .your-games__title {
+    margin: 0;
+    font-size: var(--klods-font-size-lg);
+  }
+
+  /* klods-details pads its content; the list has its own padding */
+  .your-games > .klods-list {
+    padding: 0;
   }
 
   .your-games .variant-icon {
     width: 2.5rem;
     height: 2.5rem;
+  }
+
+  /* Each row is the game's link with a remove button after it */
+  .your-games__item {
+    display: flex;
+    align-items: center;
+  }
+
+  .your-games__item .klods-list__link {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .your-games__remove {
+    flex-shrink: 0;
+    margin-inline-end: var(--klods-space-2);
+    padding: var(--klods-space-1) var(--klods-space-2);
+    font-size: var(--klods-font-size-lg);
+    line-height: 1;
+    color: var(--klods-color-muted);
   }
 
   /* A status that doesn't fit beside the name moves onto its own line */
@@ -364,6 +400,21 @@
   #variant-label {
     color: var(--variant);
     font-weight: 600;
+  }
+
+  /* On a phone the breadcrumb and the status don't fit on one line. "Chess
+   * variants" becomes "Chess", and the last crumb ("Against a friend") goes,
+   * along with the chevron before it: the player label above the board says
+   * who you're playing. */
+  @media (max-width: 520px) {
+    .wide-only,
+    #game-crumb {
+      display: none;
+    }
+
+    .klods-breadcrumb__item:has(+ #game-crumb)::after {
+      display: none;
+    }
   }
 
   /* The status is emptied while the waiting overlay is up */

@@ -38,12 +38,17 @@
 
       <div id="error-message" class="klods-alert klods-alert--danger" role="alert" hidden></div>
 
-      <section id="your-games" class="klods-card your-games" aria-labelledby="your-games-title" hidden>
-        <div class="klods-card__body your-games__body">
-          <h2 id="your-games-title" class="klods-card__title">Your games</h2>
-          <ul id="your-games-list" class="klods-list klods-list--flush"></ul>
-        </div>
-      </section>
+      <!-- Folds away; while folded, the summary still says if a game is waiting for you -->
+      <details id="your-games" class="klods-details your-games" open hidden>
+        <summary>
+          <span class="your-games__summary">
+            <h2 class="your-games__title">Your games</h2>
+            <span id="your-games-count" class="klods-badge"></span>
+            <span id="your-games-waiting" class="klods-status klods-status--success" hidden></span>
+          </span>
+        </summary>
+        <ul id="your-games-list" class="klods-list klods-list--flush"></ul>
+      </details>
 
       <main class="lobby">
         <form id="new-game" class="klods-card new-game" aria-labelledby="new-game-title">
@@ -158,6 +163,7 @@
 
     <script type="module">
       import { ChessEngine } from "./js/chess-engine.js";
+      import { askToConfirm } from "./js/confirm.js";
       import {
         CHESS960_RULES,
         VARIANTS,
@@ -377,8 +383,18 @@
 
       const DAY = 24 * 60 * 60 * 1000;
 
+      // A game where someone still hasn't made their first move a day after
+      // anything last happened probably never got going (a link that didn't
+      // reach the other person, say), so it's left out of the list
+      function neverStarted(moveCount, lastActivity) {
+        return moveCount < 2 && Date.now() - lastActivity > DAY;
+      }
+
+      const moveCount = (state) => Object.values(state?.moveHistory ?? {}).length;
+
       // Bot games are saved in local storage by the game page (chess-bot-<code>).
-      // Finished ones are left out, and forgotten a day after they ended.
+      // Finished ones are left out, and forgotten a day after they ended. So are
+      // ones that never started, and ones you remove from the list.
       function savedBotGames() {
         const rows = [];
         for (const storageKey of Object.keys(localStorage)) {
@@ -395,6 +411,10 @@
             if (Date.now() - updatedAt > DAY) localStorage.removeItem(storageKey);
             continue;
           }
+          if (neverStarted(moveCount(state), updatedAt)) {
+            localStorage.removeItem(storageKey);
+            continue;
+          }
           const yourMove = state.turn === colour;
           rows.push({
             href: `game.html#bot:${variant}:${colour}:${storageKey.slice("chess-bot-".length)}`,
@@ -403,6 +423,9 @@
             status: yourMove ? "Your move" : "Bot's move",
             yourMove,
             lastMoveAt: updatedAt,
+            // It only lives in this browser, so removing it deletes it
+            remove: () => localStorage.removeItem(storageKey),
+            isBot: true,
           });
         }
         return rows;
@@ -410,10 +433,12 @@
 
       // Every game you've started or joined with a friend leaves its code in
       // local storage (chess-color-<code>, holding your colour). Look each one up
-      // and keep the ones still going.
+      // and keep the ones still going. Removing one from the list only hides it
+      // (chess-hidden-<code>): the game page needs your colour to let you back in.
       async function friendGames() {
         const saved = Object.keys(localStorage)
           .filter((storageKey) => storageKey.startsWith("chess-color-"))
+          .filter((storageKey) => !localStorage.getItem("chess-hidden-" + storageKey.slice("chess-color-".length)))
           .map((storageKey) => ({
             id: storageKey.slice("chess-color-".length),
             colour: localStorage.getItem(storageKey),
@@ -432,6 +457,7 @@
         saved.forEach(({ id, colour }, i) => {
           const data = found[i];
           if (!data || data.status === "finished" || data.state?.gameOver) return;
+          if (neverStarted(moveCount(data.state), data.lastMoveAt ?? data.createdAt ?? 0)) return;
           try {
             parseVariantKey(data.variant);
           } catch {
@@ -448,6 +474,8 @@
             status,
             yourMove,
             lastMoveAt: data.lastMoveAt ?? data.createdAt ?? 0,
+            remove: () => localStorage.setItem("chess-hidden-" + id, "1"),
+            code: id,
           });
         });
         return rows;
@@ -486,14 +514,71 @@
             trail.append(status);
 
             link.append(lead, content, trail);
+
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "klods-button klods-button--ghost your-games__remove";
+            remove.textContent = "×";
+            remove.title = "Remove from your games";
+            remove.setAttribute("aria-label", `Remove ${variantName(row.key)}, ${row.detail}, from your games`);
+            remove.addEventListener("click", async () => {
+              const confirmed = await askToConfirm({
+                title: "Remove this game?",
+                message: row.isBot
+                  ? `Your ${variantName(row.key)} game against the bot will be deleted. You can't undo this.`
+                  : `${variantName(row.key)} (${row.code}) will no longer be listed here. You can still open it from its link.`,
+                confirmLabel: "Remove",
+                cancelLabel: "Keep it",
+                danger: true,
+              });
+              if (!confirmed) return;
+              try {
+                row.remove();
+              } catch {
+                // No storage: it'll be back next time, but it goes for now
+              }
+              botGames = botGames.filter((game) => game !== row);
+              item.remove();
+              updateYourGamesSummary();
+            });
+
             const item = document.createElement("li");
-            item.className = "klods-list__item klods-list__item--link";
-            item.append(link);
+            item.className = "klods-list__item klods-list__item--link your-games__item";
+            if (row.yourMove) item.dataset.yourMove = "";
+            item.append(link, remove);
             return item;
           })
         );
-        document.getElementById("your-games").hidden = rows.length === 0;
+        updateYourGamesSummary();
       }
+
+      // The count, and how many games are waiting for your move, so you can
+      // tell even with the list folded away
+      function updateYourGamesSummary() {
+        const list = document.getElementById("your-games-list");
+        const games = list.children.length;
+        const yourMove = list.querySelectorAll("[data-your-move]").length;
+        document.getElementById("your-games").hidden = games === 0;
+        document.getElementById("your-games-count").textContent = games;
+        const waiting = document.getElementById("your-games-waiting");
+        waiting.textContent = yourMove === 1 ? "1 waiting for you" : `${yourMove} waiting for you`;
+        waiting.hidden = yourMove === 0;
+      }
+
+      // Remember whether the list is open or folded away
+      const yourGames = document.getElementById("your-games");
+      try {
+        if (localStorage.getItem("chess-your-games-open") === "false") yourGames.open = false;
+      } catch {
+        // No storage: it starts open
+      }
+      yourGames.addEventListener("toggle", () => {
+        try {
+          localStorage.setItem("chess-your-games-open", String(yourGames.open));
+        } catch {
+          // Storage is full or blocked: it just won't remember
+        }
+      });
 
       // Bot games show straight away; games with friends join them once
       // Firebase has looked them up

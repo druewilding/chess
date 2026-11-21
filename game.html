@@ -17,7 +17,7 @@
         <nav aria-label="Breadcrumb">
           <ol class="klods-breadcrumb__list">
             <li class="klods-breadcrumb__item">
-              <a class="klods-breadcrumb__link" href="index.html">Chess variants</a>
+              <a class="klods-breadcrumb__link" href="index.html">Chess<span class="wide-only"> variants</span></a>
             </li>
             <li class="klods-breadcrumb__item">
               <a class="klods-breadcrumb__link" id="variant-label" href="index.html"></a>
@@ -107,20 +107,6 @@
         </div>
       </footer>
 
-      <!-- Asks before resigning or offering a draw (see askToConfirm) -->
-      <dialog id="confirm-dialog" class="klods-modal" aria-labelledby="confirm-dialog-title">
-        <form method="dialog" class="klods-modal__panel">
-          <div class="klods-modal__header">
-            <h2 id="confirm-dialog-title" class="klods-modal__title"></h2>
-          </div>
-          <p id="confirm-dialog-message" class="klods-modal__body"></p>
-          <div class="klods-modal__actions">
-            <button id="confirm-dialog-cancel" class="klods-button" value="cancel" autofocus>Keep playing</button>
-            <button id="confirm-dialog-ok" class="klods-button" value="confirm"></button>
-          </div>
-        </form>
-      </dialog>
-
       <!-- Draw offer banner -->
       <div id="draw-offer-banner" class="draw-offer-banner" role="alert" hidden>
         <span>Your opponent offers a draw.</span>
@@ -157,6 +143,7 @@
     <script type="module">
       import { ChessEngine } from "./js/chess-engine.js";
       import { ChessUI } from "./js/chess-ui.js";
+      import { askToConfirm } from "./js/confirm.js";
       import {
         CHESS960_RULES,
         VARIANTS,
@@ -1245,31 +1232,6 @@
         );
       }
 
-      /**
-       * Ask the player to confirm something, in the page's own dialog.
-       * Resolves true if they confirm; false if they keep playing, press Esc or
-       * click outside the dialog.
-       */
-      function askToConfirm({ title, message, confirmLabel, danger = false }) {
-        const dialog = document.getElementById("confirm-dialog");
-        document.getElementById("confirm-dialog-title").textContent = title;
-        document.getElementById("confirm-dialog-message").textContent = message;
-        const ok = document.getElementById("confirm-dialog-ok");
-        ok.textContent = confirmLabel;
-        ok.className = `klods-button ${danger ? "klods-button--danger" : "klods-button--primary"}`;
-
-        return new Promise((resolve) => {
-          dialog.returnValue = "";
-          dialog.addEventListener("close", () => resolve(dialog.returnValue === "confirm"), { once: true });
-          dialog.showModal();
-        });
-      }
-
-      // Clicking the backdrop (outside the panel) closes the dialog
-      document.getElementById("confirm-dialog").addEventListener("click", (event) => {
-        if (event.target === event.currentTarget) event.currentTarget.close("cancel");
-      });
-
       // Control buttons
       document.getElementById("btn-resign").addEventListener("click", async () => {
         if (engine.gameOver) return;
@@ -1277,6 +1239,7 @@
           title: "Resign this game?",
           message: `${isBotMode ? "The bot" : "Your opponent"} wins. You can't undo this.`,
           confirmLabel: "Resign",
+          cancelLabel: "Keep playing",
           danger: true,
         });
         if (confirmed && !engine.gameOver) {
@@ -1304,6 +1267,7 @@
           title: "Offer a draw?",
           message: "If your opponent accepts, the game ends in a draw.",
           confirmLabel: "Offer draw",
+          cancelLabel: "Keep playing",
         });
         if (confirmed && !engine.gameOver) {
           gm.offerDraw(myColor);
