@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
-    "firebase-admin": "12.7.0",
+    "firebase-admin": "14.5.1",
     "firebase-functions": "6.6.0"
   },
   "engines": {
