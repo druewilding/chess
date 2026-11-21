@@ -163,9 +163,25 @@
 
   /* ===== Home page: new game form and rules ===== */
   /* ===== Your games (home page) ===== */
-  .your-games__body {
-    display: grid;
-    gap: var(--klods-space-3);
+  .your-games {
+    background: var(--klods-card-bg);
+  }
+
+  .your-games__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--klods-space-2) var(--klods-space-3);
+  }
+
+  .your-games__title {
+    margin: 0;
+    font-size: var(--klods-font-size-lg);
+  }
+
+  /* klods-details pads its content; the list has its own padding */
+  .your-games > .klods-list {
+    padding: 0;
   }
 
   .your-games .variant-icon {

@@ -38,12 +38,17 @@
 
       <div id="error-message" class="klods-alert klods-alert--danger" role="alert" hidden></div>
 
-      <section id="your-games" class="klods-card your-games" aria-labelledby="your-games-title" hidden>
-        <div class="klods-card__body your-games__body">
-          <h2 id="your-games-title" class="klods-card__title">Your games</h2>
-          <ul id="your-games-list" class="klods-list klods-list--flush"></ul>
-        </div>
-      </section>
+      <!-- Folds away; while folded, the summary still says if a game is waiting for you -->
+      <details id="your-games" class="klods-details your-games" open hidden>
+        <summary>
+          <span class="your-games__summary">
+            <h2 class="your-games__title">Your games</h2>
+            <span id="your-games-count" class="klods-badge"></span>
+            <span id="your-games-waiting" class="klods-status klods-status--success" hidden></span>
+          </span>
+        </summary>
+        <ul id="your-games-list" class="klods-list klods-list--flush"></ul>
+      </details>
 
       <main class="lobby">
         <form id="new-game" class="klods-card new-game" aria-labelledby="new-game-title">
@@ -534,17 +539,46 @@
               }
               botGames = botGames.filter((game) => game !== row);
               item.remove();
-              if (list.children.length === 0) document.getElementById("your-games").hidden = true;
+              updateYourGamesSummary();
             });
 
             const item = document.createElement("li");
             item.className = "klods-list__item klods-list__item--link your-games__item";
+            if (row.yourMove) item.dataset.yourMove = "";
             item.append(link, remove);
             return item;
           })
         );
-        document.getElementById("your-games").hidden = rows.length === 0;
+        updateYourGamesSummary();
       }
+
+      // The count, and how many games are waiting for your move, so you can
+      // tell even with the list folded away
+      function updateYourGamesSummary() {
+        const list = document.getElementById("your-games-list");
+        const games = list.children.length;
+        const yourMove = list.querySelectorAll("[data-your-move]").length;
+        document.getElementById("your-games").hidden = games === 0;
+        document.getElementById("your-games-count").textContent = games;
+        const waiting = document.getElementById("your-games-waiting");
+        waiting.textContent = yourMove === 1 ? "1 waiting for you" : `${yourMove} waiting for you`;
+        waiting.hidden = yourMove === 0;
+      }
+
+      // Remember whether the list is open or folded away
+      const yourGames = document.getElementById("your-games");
+      try {
+        if (localStorage.getItem("chess-your-games-open") === "false") yourGames.open = false;
+      } catch {
+        // No storage: it starts open
+      }
+      yourGames.addEventListener("toggle", () => {
+        try {
+          localStorage.setItem("chess-your-games-open", String(yourGames.open));
+        } catch {
+          // Storage is full or blocked: it just won't remember
+        }
+      });
 
       // Bot games show straight away; games with friends join them once
       // Firebase has looked them up
