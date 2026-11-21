@@ -222,8 +222,7 @@
     outline-offset: 2px;
   }
 
-  .variant-option input,
-  .segmented input {
+  .variant-option input {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -279,39 +278,8 @@
     gap: var(--klods-space-3);
   }
 
-  /* Floating the legend lets it sit in the row beside the choices */
-  .setup-row legend {
-    float: left;
-  }
-
-  .segmented {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 3px;
-    padding: 3px;
-    border: 1px solid var(--klods-color-border);
-    border-radius: var(--klods-radius-pill);
-  }
-
-  .segmented label {
-    padding: var(--klods-space-1) var(--klods-space-4);
-    border-radius: var(--klods-radius-pill);
-    font-size: var(--klods-font-size-sm);
-    cursor: pointer;
-  }
-
-  .segmented label:hover {
-    background: var(--klods-color-surface-2);
-  }
-
-  .segmented label:has(input:checked) {
-    background: var(--klods-color-accent);
-    color: var(--klods-color-accent-fg);
-  }
-
-  .segmented label:has(input:focus-visible) {
-    outline: 2px solid var(--klods-color-accent);
-    outline-offset: 2px;
+  .setup-row .klods-label {
+    margin: 0;
   }
 
   .new-game__start {
