@@ -20,10 +20,13 @@ export const VARIANTS = [
       board or a friendly piece, or capture an enemy piece. They <em>may</em> stop at an intermediate square to block
       check, as this is the furthest they can go in this situation.`,
     screenshot: "assets/images/ice-skate-chess.webp",
-    // A 4×4 corner of a board for the variant's icon: squares are numbered 0–15
-    // from the top left, pieces are "colour/type", path squares are tinted and
-    // target squares are highlighted.
-    icon: { pieces: { 12: "white/rook", 3: "black/rook" }, path: [8, 4], target: [0] },
+    // The variant's icon: a 3×3 corner of a board showing one move, marked the
+    // way the real board marks it. Squares are numbered 0–8 from the top left.
+    // `pieces` are "colour/type", `selected` is the piece about to move, `dots`
+    // are squares it can move to, `rings` are pieces it can capture, and
+    // `shroud` squares are dark (for Dark Chess).
+    // Here: the rook can only stop at the far end of each line.
+    icon: { pieces: { 6: "white/rook" }, selected: 6, dots: [0, 8] },
   },
   {
     id: "angry",
@@ -34,7 +37,8 @@ export const VARIANTS = [
       except your own king. Be careful: sacrificing your own material can open lines, but it can also backfire
       spectacularly.`,
     screenshot: "assets/images/angry-chess.webp",
-    icon: { pieces: { 9: "white/knight", 2: "white/pawn", 15: "white/king" }, target: [2] },
+    // The knight can capture its own pawn
+    icon: { pieces: { 6: "white/knight", 1: "white/pawn" }, selected: 6, dots: [5], rings: [1] },
   },
   {
     id: "risky",
@@ -48,7 +52,8 @@ export const VARIANTS = [
       winner is whoever has the <strong>most points</strong> from captured pieces (king = 12 pts). If the points are
       equal, the game is a draw.`,
     screenshot: "assets/images/risky-chess.webp",
-    icon: { pieces: { 1: "black/king", 13: "white/queen" }, path: [9, 5], target: [1] },
+    // The queen can capture the king
+    icon: { pieces: { 8: "white/queen", 0: "black/king" }, selected: 8, dots: [4], rings: [0] },
   },
   {
     id: "dark",
@@ -59,11 +64,13 @@ export const VARIANTS = [
       pieces, but enemy pieces are completely hidden. Tap one of your pieces to <strong>shine a torch</strong>: its
       legal moves light up, revealing any enemies lurking in the path.`,
     screenshot: "assets/images/dark-chess.webp",
+    // The bishop's torch reveals a hidden knight
     icon: {
-      pieces: { 13: "white/bishop", 7: "black/knight" },
-      path: [10],
-      target: [7],
-      shroud: [0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 14, 15],
+      pieces: { 6: "white/bishop", 2: "black/knight" },
+      selected: 6,
+      dots: [4],
+      rings: [2],
+      shroud: [0, 1, 3, 5, 7, 8],
     },
   },
   {
@@ -74,7 +81,8 @@ export const VARIANTS = [
     rules: `The same as standard chess, until you get to promotion, at which point you can claim an
       <strong>Amazon</strong>, a powerful piece combining the abilities of both a queen and a knight.`,
     screenshot: "assets/images/superchess.webp",
-    icon: { pieces: { 5: "white/pawn", 1: "white/amazon" }, path: [5], target: [1] },
+    // An Amazon: a queen and a knight in one piece
+    icon: { pieces: { 4: "white/amazon" }, selected: 4 },
   },
 ];
 
@@ -131,18 +139,19 @@ export function applyVariantColour(element, variant) {
 
 /** The variant's little board icon, as an element. */
 export function variantIcon(variant) {
-  const { pieces = {}, path = [], target = [], shroud = [] } = variant.icon;
+  const { pieces = {}, selected = null, dots = [], rings = [], shroud = [] } = variant.icon;
   const board = document.createElement("span");
   board.className = "variant-icon";
   board.setAttribute("aria-hidden", "true");
   applyVariantColour(board, variant);
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 9; i++) {
     const square = document.createElement("span");
-    const isLight = (Math.floor(i / 4) + (i % 4)) % 2 === 0;
+    const isLight = (Math.floor(i / 3) + (i % 3)) % 2 === 0;
     square.className = `variant-icon__square ${isLight ? "light" : "dark"}`;
     if (shroud.includes(i)) square.classList.add("variant-icon__square--shroud");
-    if (path.includes(i)) square.classList.add("variant-icon__square--path");
-    if (target.includes(i)) square.classList.add("variant-icon__square--target");
+    if (selected === i) square.classList.add("variant-icon__square--selected");
+    if (dots.includes(i)) square.classList.add("variant-icon__square--dot");
+    if (rings.includes(i)) square.classList.add("variant-icon__square--ring");
     if (pieces[i]) {
       const img = document.createElement("img");
       img.src = `assets/pieces/${pieces[i]}.webp`;
