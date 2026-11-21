@@ -420,7 +420,7 @@
             href: `game.html#bot:${variant}:${colour}:${storageKey.slice("chess-bot-".length)}`,
             key: variant,
             detail: `Playing as ${colour} against the bot`,
-            status: yourMove ? "Your move" : "Bot's move",
+            status: yourMove ? "Your turn" : "Bot's turn",
             yourMove,
             lastMoveAt: updatedAt,
             // It only lives in this browser, so removing it deletes it
@@ -464,9 +464,9 @@
             return; // A variant that no longer exists
           }
           const yourMove = data.status === "active" && data.state?.turn === colour;
-          let status = "Their move";
+          let status = "Opponent's turn";
           if (data.status === "waiting") status = "Waiting for them to join";
-          else if (yourMove) status = "Your move";
+          else if (yourMove) status = "Your turn";
           rows.push({
             href: `game.html#${id}`,
             key: data.variant,
@@ -482,7 +482,7 @@
       }
 
       function showYourGames(rows) {
-        // Your move first, then the most recently played
+        // Your turn first, then the most recently played
         rows.sort((a, b) => b.yourMove - a.yourMove || b.lastMoveAt - a.lastMoveAt);
 
         const list = document.getElementById("your-games-list");
