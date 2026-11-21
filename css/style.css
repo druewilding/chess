@@ -125,9 +125,28 @@
   /* ===== Footer ===== */
   .site-footer {
     display: flex;
-    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--klods-space-3) var(--klods-space-5);
     padding-top: var(--klods-space-4);
     border-top: 1px solid var(--klods-color-border);
+  }
+
+  .site-footer__credit {
+    margin: 0;
+    font-size: var(--klods-font-size-sm);
+    color: var(--klods-color-muted);
+  }
+
+  .site-footer__theme {
+    display: flex;
+    align-items: center;
+    gap: var(--klods-space-3);
+  }
+
+  .site-footer__theme .klods-label {
+    margin: 0;
   }
 
   .join-form {
