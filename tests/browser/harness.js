@@ -157,24 +157,21 @@ export class TwoPlayerGame {
     const p1 = await ctx1.newPage();
     await p1.goto(`${BASE}/index.html`);
 
-    // Map variant to button ID
-    const variantButtonMap = {
-      iceskate: "btn-new-standard",
-      "iceskate-960": "btn-new-960",
-      angry: "btn-new-angry",
-      "angry-960": "btn-new-angry-960",
-      dark: "btn-new-dark",
-      "dark-960": "btn-new-dark-960",
-      superchess: "btn-new-superchess",
-      "superchess-960": "btn-new-superchess-960",
-      risky: "btn-new-risky",
-      "risky-960": "btn-new-risky-960",
-    };
-    const btnId = variantButtonMap[variant];
-    if (!btnId) throw new Error(`Unknown variant: "${variant}"`);
+    // Fill in the new game form: variant, Chess960, opponent and colour
+    const is960 = variant.endsWith("-960");
+    const variantId = is960 ? variant.slice(0, -4) : variant;
+    const variantOption = p1.locator(`#variant-${variantId}`);
+    if ((await variantOption.count()) === 0) throw new Error(`Unknown variant: "${variant}"`);
 
-    await p1.click(`#${btnId}`);
-    await p1.click(`#btn-color-${creatorColor}`);
+    await variantOption.check({ force: true });
+    // The switch's input is visually hidden, so a forced click lands beside it.
+    // Clicking it in the page toggles it and fires "change" like a real click.
+    await p1.locator("#chess960").evaluate((input, on) => {
+      if (input.checked !== on) input.click();
+    }, is960);
+    await p1.locator("#opponent-friend").check({ force: true });
+    await p1.locator(`#color-${creatorColor}`).check({ force: true });
+    await p1.click("#btn-start");
 
     // Wait for navigation to game.html (serve may strip the .html extension)
     await p1.waitForURL(/game(\.html)?#/);
@@ -587,26 +584,26 @@ export class TwoPlayerGame {
   // ── Game actions ───────────────────────────────────────────────────
 
   /**
-   * Resign on a player's page. Handles the window.confirm dialog automatically.
+   * Resign on a player's page, confirming in the page's dialog.
    * Waits for the game-over overlay to appear.
    * @param {string} color — "white" or "black"
    */
   async resign(color) {
     const page = this.pages[color];
-    page.once("dialog", (dialog) => dialog.accept());
     await page.click("#btn-resign");
+    await page.click("#confirm-dialog-ok");
     await page.waitForFunction(() => !document.getElementById("game-over-overlay").hidden, { timeout: 5_000 });
     return this;
   }
 
   /**
-   * Offer a draw on a player's page.
+   * Offer a draw on a player's page, confirming in the page's dialog.
    * @param {string} color — "white" or "black"
    */
   async offerDraw(color) {
     const page = this.pages[color];
-    page.once("dialog", (dialog) => dialog.accept());
     await page.click("#btn-draw");
+    await page.click("#confirm-dialog-ok");
     return this;
   }
 

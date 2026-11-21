@@ -21,6 +21,7 @@
     "lint": "eslint --fix",
     "lint:check": "eslint",
     "package:lint": "npx npm-package-json-lint .",
+    "screenshots": "node scripts/screenshots.js",
     "test": "vitest run",
     "test:browser": "npx playwright test",
     "test:browser:headed": "npx playwright test --headed",
