@@ -162,7 +162,7 @@
       // A link like ./?variant=risky-960 (from the game page's breadcrumb)
       // opens with that variant chosen
       const requested = new URLSearchParams(window.location.search).get("variant");
-      let initial = { variant: VARIANTS[0], is960: false };
+      let initial = null;
       if (requested) {
         try {
           initial = parseVariantKey(requested);
@@ -170,8 +170,45 @@
           // Unknown variant in the link: keep the default
         }
       }
-      document.getElementById(`variant-${initial.variant.id}`).checked = true;
-      document.getElementById("chess960").checked = initial.is960;
+
+      // The variant, who you play, which colour and Chess960 are remembered for
+      // next time. A link with a variant still decides the variant and Chess960,
+      // as it names the exact game.
+      const SETTINGS_KEY = "chess-new-game-settings";
+      let saved = {};
+      try {
+        saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {};
+      } catch {
+        // No storage, or nothing sensible saved: use the defaults
+      }
+
+      const checkIfExists = (id) => {
+        const input = document.getElementById(id);
+        if (input) input.checked = true;
+      };
+      // A saved variant that no longer exists leaves the first one chosen
+      checkIfExists(`variant-${VARIANTS[0].id}`);
+      checkIfExists(`variant-${initial ? initial.variant.id : saved.variant}`);
+      checkIfExists(`opponent-${saved.opponent}`);
+      checkIfExists(`color-${saved.colour}`);
+      document.getElementById("chess960").checked = initial ? initial.is960 : saved.chess960 === true;
+
+      function saveSettings() {
+        const data = new FormData(document.getElementById("new-game"));
+        try {
+          localStorage.setItem(
+            SETTINGS_KEY,
+            JSON.stringify({
+              variant: data.get("variant"),
+              opponent: data.get("opponent"),
+              colour: data.get("colour"),
+              chess960: document.getElementById("chess960").checked,
+            })
+          );
+        } catch {
+          // Storage is full or blocked: the form still works, it just won't remember
+        }
+      }
 
       // ---- Keep the rules and the start button in step with the form ----
 
@@ -208,7 +245,10 @@
         rules960.hidden = !is960;
       }
 
-      form.addEventListener("change", update);
+      form.addEventListener("change", () => {
+        update();
+        saveSettings();
+      });
       update();
 
       // ---- Start a game ----

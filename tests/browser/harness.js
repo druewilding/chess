@@ -164,7 +164,11 @@ export class TwoPlayerGame {
     if ((await variantOption.count()) === 0) throw new Error(`Unknown variant: "${variant}"`);
 
     await variantOption.check({ force: true });
-    await p1.locator("#chess960").setChecked(is960, { force: true });
+    // The switch's input is visually hidden, so a forced click lands beside it.
+    // Clicking it in the page toggles it and fires "change" like a real click.
+    await p1.locator("#chess960").evaluate((input, on) => {
+      if (input.checked !== on) input.click();
+    }, is960);
     await p1.locator("#opponent-friend").check({ force: true });
     await p1.locator(`#color-${creatorColor}`).check({ force: true });
     await p1.click("#btn-start");
