@@ -584,26 +584,26 @@ export class TwoPlayerGame {
   // ── Game actions ───────────────────────────────────────────────────
 
   /**
-   * Resign on a player's page. Handles the window.confirm dialog automatically.
+   * Resign on a player's page, confirming in the page's dialog.
    * Waits for the game-over overlay to appear.
    * @param {string} color — "white" or "black"
    */
   async resign(color) {
     const page = this.pages[color];
-    page.once("dialog", (dialog) => dialog.accept());
     await page.click("#btn-resign");
+    await page.click("#confirm-dialog-ok");
     await page.waitForFunction(() => !document.getElementById("game-over-overlay").hidden, { timeout: 5_000 });
     return this;
   }
 
   /**
-   * Offer a draw on a player's page.
+   * Offer a draw on a player's page, confirming in the page's dialog.
    * @param {string} color — "white" or "black"
    */
   async offerDraw(color) {
     const page = this.pages[color];
-    page.once("dialog", (dialog) => dialog.accept());
     await page.click("#btn-draw");
+    await page.click("#confirm-dialog-ok");
     return this;
   }
 
