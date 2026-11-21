@@ -223,6 +223,25 @@
     color: var(--klods-color-muted);
   }
 
+  /* On a phone the status goes under the text, lined up with it, instead of
+   * wrapping onto a line of its own at the right */
+  @media (max-width: 520px) {
+    .your-games .klods-list__link {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: var(--klods-space-1) var(--klods-space-3);
+    }
+
+    .your-games .klods-list__lead {
+      grid-row: span 2;
+    }
+
+    .your-games .klods-list__trail {
+      grid-column: 2;
+      margin-inline-start: 0;
+    }
+  }
+
   .lobby {
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
